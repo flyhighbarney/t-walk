@@ -11,6 +11,7 @@ import { Boards } from './api/boards.ts';
 import { OffsetClock, systemClock, type Clock } from './live/clock.ts';
 import { Ingest } from './live/ingest.ts';
 import { LiveManager } from './live/manager.ts';
+import { DelayRecorder } from './live/delays.ts';
 import { Recorder } from './live/recorder.ts';
 import { BikesFeed } from './live/bikes.ts';
 import { Planner } from './plan/planner.ts';
@@ -84,7 +85,13 @@ bikes?.start();
 
 const boards = new Boards({ getDb: () => db, store, ingest, clock });
 const fareRules = JSON.parse(readFileSync(join(REPO_ROOT, 'config', 'fares.json'), 'utf8')) as FareRules;
-const planner = new Planner({ otpUrl: config.otpUrl, getDb: () => db, store, ingest, clock, fareRules });
+// Arrival history: how late each line really ran against what riders were shown, kept in data/history.json.
+const historyPath = join(config.dataDir, 'history.json');
+const delays = DelayRecorder.load(historyPath, () => clock.now());
+store.observer = delays;
+const historyTimer = setInterval(() => delays.save(historyPath), 5 * 60_000);
+historyTimer.unref();
+const planner = new Planner({ otpUrl: config.otpUrl, getDb: () => db, store, ingest, clock, fareRules, history: delays.history });
 const geocoder = new Geocoder({ userAgent: config.userAgent, getDb: () => db, baseUrl: config.photonUrl });
 // Leave-now notifications: only with VAPID keys (npm run push:keys) and not in replay mode.
 let push: { store: PushStore; sender: WebPushSender; publicKey: string } | null = null;
@@ -134,6 +141,8 @@ const shutdown = async () => {
   manager?.stop();
   bikes?.stop();
   replay?.stop();
+  clearInterval(historyTimer);
+  delays.save(historyPath);
   await app.close();
   db.close();
   process.exit(0);

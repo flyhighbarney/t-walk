@@ -55,9 +55,13 @@ describe('planning', () => {
     expect(red!.alerts).toEqual(['Red Line: expect minor delays']);
     // OTP says real-time, but the MBTA marked B-0805 as schedule-based (uncertainty 300).
     expect(bus).toMatchObject({ mode: 'BUS', source: 'estimate', routeLabel: '1' });
+    // Up Massachusetts Avenue to Harvard: decoded [lon, lat], the whole way in Boston and Cambridge.
     expect(bus!.geometry).toEqual([
-      [-120.2, 38.5],
-      [-120.95, 40.7],
+      [-71.063, 42.357],
+      [-71.0893, 42.3505],
+      [-71.0935, 42.3592],
+      [-71.1037, 42.3654],
+      [-71.1189, 42.3732],
     ]);
     // Off the train at 8:14, a 2 min walk, the bus at 8:19: 3 min spare after a scheduled arrival.
     expect(trip.risk).toMatchObject({ level: 'medium', transfers: [{ at: 'Massachusetts Ave @ Tremont St', spareS: 180, walkS: 120 }] });
@@ -86,6 +90,13 @@ describe('planning', () => {
     // Red Line (Rapid Transit, $2.40) then route 1 (Local Bus): the bus is free.
     expect(trip.legs.filter((l) => l.transit).map((l) => l.priceCents)).toEqual([240, 170]);
     expect(trip.fare).toEqual({ cents: 240, label: 'Tap to pay or CharlieCard' });
+  });
+
+  it("names the trip's ends with the places asked for, not OTP's \"Destination\"", () => {
+    const named = mapItinerary(itineraries[0]!, { label: () => 'live', stepFree: false, ends: { from: 'Park Street', to: 'Harvard Yard' } });
+    expect(named.legs.at(-1)!.to.name).toBe('Harvard Yard');
+    const plain = mapItinerary(itineraries[0]!, { label: () => 'live', stepFree: false });
+    expect(plain.legs.at(-1)!.to.name).toBe('Destination');
   });
 
   it('sends OTP the right question', () => {

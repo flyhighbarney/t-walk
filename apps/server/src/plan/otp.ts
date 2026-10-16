@@ -213,8 +213,15 @@ export function mapItinerary(
     label: LegLabeler;
     stepFree: boolean;
     nextGap?: (leg: TripLeg) => number | null;
+    /** Extra buffer (seconds) for a leg's arrival, from how late that line really runs there. */
+    historyBuffer?: (leg: TripLeg) => number | null;
     /** With these, the fare uses the configurable transfer table (config/fares.json). */
     fares?: { rules: FareRules; fareClass: (routeId: string) => string | null };
+    /**
+     * The names the plan was asked with ("Harvard Yard"). OTP names a point that
+     * isn't a stop "Origin" or "Destination", so these win at the trip's two ends.
+     */
+    ends?: { from?: string | null; to?: string | null };
   },
 ): TripOption {
   const legs: TripLeg[] = it.legs.map((l) => {
@@ -262,6 +269,10 @@ export function mapItinerary(
         : [],
     };
   });
+  const first = legs[0];
+  const last = legs[legs.length - 1];
+  if (first && !first.from.stopId && opts.ends?.from) first.from.name = opts.ends.from;
+  if (last && !last.to.stopId && opts.ends?.to) last.to.name = opts.ends.to;
   const walk = legs.filter((l) => !l.transit);
   const transit = legs.filter((l) => l.transit);
   const start = t(it.start);
@@ -275,7 +286,11 @@ export function mapItinerary(
     walkS: walk.reduce((a, l) => a + l.durationS, 0),
     walkM: walk.reduce((a, l) => a + l.distanceM, 0),
     transfers: countTransfers(legs),
-    risk: transferRisk(legs, (i) => opts.nextGap?.(legs[i]!) ?? null),
+    risk: transferRisk(
+      legs,
+      (i) => opts.nextGap?.(legs[i]!) ?? null,
+      (i) => opts.historyBuffer?.(legs[i]!) ?? null,
+    ),
     fare: opts.fares
       ? tripFare(
           transit.map((l) => ({ fareClass: l.routeId ? opts.fares!.fareClass(l.routeId) : null, priceCents: l.priceCents, start: bestTime(l.start) })),

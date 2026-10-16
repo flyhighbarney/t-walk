@@ -129,6 +129,12 @@ body {
   border-radius: 6px;
 }
 
+/* Containers that take focus only so a screen reader starts there (the map's
+   sheets): no ring, or a sheet opened from a link wears a white outline. */
+[tabindex='-1']:focus-visible {
+  outline: none;
+}
+
 .tabular {
   font-variant-numeric: tabular-nums;
 }

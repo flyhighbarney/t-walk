@@ -17,6 +17,7 @@ import {
   type TripOption,
   type WalkPace,
 } from '@twalk/core';
+import type { ArrivalHistory } from '@twalk/core';
 import type { GtfsDb } from '../gtfs/db.ts';
 import type { Clock } from '../live/clock.ts';
 import type { Ingest } from '../live/ingest.ts';
@@ -63,6 +64,7 @@ export class Planner {
   private readonly clock: Clock;
   private readonly query: typeof queryOtp;
   private readonly fareRules: FareRules | null;
+  private readonly history: ArrivalHistory | null;
 
   constructor(opts: {
     otpUrl: string;
@@ -72,6 +74,7 @@ export class Planner {
     clock: Clock;
     query?: typeof queryOtp;
     fareRules?: FareRules | null;
+    history?: ArrivalHistory | null;
   }) {
     this.otpUrl = opts.otpUrl;
     this.getDb = opts.getDb;
@@ -80,6 +83,7 @@ export class Planner {
     this.clock = opts.clock;
     this.query = opts.query ?? queryOtp;
     this.fareRules = opts.fareRules ?? null;
+    this.history = opts.history ?? null;
   }
 
   private fares = () =>
@@ -112,6 +116,10 @@ export class Planner {
     return later != null && Number.isFinite(later) ? (later - dep) / 1000 : null;
   };
 
+  /** Seconds this line has tended to run late into the stop where the ride ends, once there's enough history. */
+  private historyBuffer = (leg: TripLeg): number | null =>
+    this.history && leg.routeId && leg.to.stopId ? this.history.extraBufferS({ routeId: leg.routeId, stopId: leg.to.stopId }) : null;
+
   async plan(req: PlanRequest, signal?: AbortSignal): Promise<PlanResponse> {
     const now = this.clock.now();
     const base: Omit<PlanQuery, 'flavor'> = {
@@ -131,7 +139,7 @@ export class Planner {
       throw reason instanceof Error ? reason : new OtpError(String(reason));
     }
     const ok = results.filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof queryOtp>>> => r.status === 'fulfilled').map((r) => r.value);
-    const lists = ok.map((r) => r.itineraries.map((it) => mapItinerary(it, { label: this.label, stepFree: req.stepFree, nextGap: this.nextGap, fares: this.fares() })));
+    const lists = ok.map((r) => r.itineraries.map((it) => mapItinerary(it, { label: this.label, stepFree: req.stepFree, ends: { from: req.from.name, to: req.to.name }, nextGap: this.nextGap, historyBuffer: this.historyBuffer, fares: this.fares() })));
     let options = mergeOptions(lists);
 
     // Walking the whole way: OTP returns it as a direct option when it's sensible; keep it only if it's competitive.
@@ -147,7 +155,7 @@ export class Planner {
       try {
         const walk = await this.query(this.otpUrl, { ...base, flavor: 'walk-only' }, signal);
         options = walk.itineraries
-          .map((it) => mapItinerary(it, { label: this.label, stepFree: req.stepFree, fares: this.fares() }))
+          .map((it) => mapItinerary(it, { label: this.label, stepFree: req.stepFree, ends: { from: req.from.name, to: req.to.name }, fares: this.fares() }))
           .filter((o) => o.durationS <= MAX_FALLBACK_WALK_S);
         walkFallback = options.length > 0;
       } catch {

@@ -126,13 +126,23 @@ export function StopSheet(props: {
   );
 }
 
-export function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+/**
+ * `quiet` is for chips that sit over the map and are mostly on (the mode
+ * filters): a solid black or white pill each would outshine the vehicles, so on
+ * is a ring and full-strength text, off is muted text with no ring.
+ */
+export function FilterChip({ active, onClick, children, quiet = false }: { active: boolean; onClick: () => void; children: ReactNode; quiet?: boolean }) {
+  const look = quiet
+    ? `bg-surface-2 ${active ? 'text-text ring-brand ring-2 ring-inset' : 'text-muted'}`
+    : active
+      ? 'bg-brand text-on-brand'
+      : 'bg-surface-2 text-text';
   return (
     <button
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-bold ${active ? 'bg-brand text-on-brand' : 'bg-surface-2 text-text'}`}
+      className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-bold ${look}`}
     >
       {children}
     </button>

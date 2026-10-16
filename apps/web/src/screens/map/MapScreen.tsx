@@ -23,6 +23,7 @@ import {
   type StopSummary,
 } from '@twalk/core';
 import { AppHeader } from '../../components/Shell.tsx';
+import { CatchStatus } from '../../components/Departures.tsx';
 import { CloseIcon, LayersIcon, ListIcon, LocateIcon, SearchIcon, WarnIcon, BikeIcon, BusIcon, FerryIcon, TrainIcon } from '../../components/icons.tsx';
 import { fetchNearby, searchStops } from '../../lib/api.ts';
 import { serverNow, useNow, usePageVisible } from '../../lib/live.ts';
@@ -480,12 +481,12 @@ export default function MapScreen({ path }: { path: string }) {
           </div>
           <div role="group" aria-label="Show on the map" className="no-scrollbar edge-fade pointer-events-auto -mx-3 flex gap-2 overflow-x-auto px-3 pb-1">
             {MODE_CHIPS.map(({ key, label, Icon }) => (
-              <FilterChip key={key} active={layers.modes[key]} onClick={() => setLayers({ ...layers, modes: { ...layers.modes, [key]: !layers.modes[key] } })}>
+              <FilterChip quiet key={key} active={layers.modes[key]} onClick={() => setLayers({ ...layers, modes: { ...layers.modes, [key]: !layers.modes[key] } })}>
                 <Icon className="size-4" />
                 {label}
               </FilterChip>
             ))}
-            <FilterChip active={layers.bikes} onClick={() => setLayers({ ...layers, bikes: !layers.bikes })}>
+            <FilterChip quiet active={layers.bikes} onClick={() => setLayers({ ...layers, bikes: !layers.bikes })}>
               <span style={{ color: layers.bikes ? undefined : BIKE_COLOR }}>
                 <BikeIcon className="size-4" />
               </span>
@@ -677,7 +678,7 @@ function NearestCard({ nearby, now, onOpen }: { nearby: NearbyResponse; now: num
         <span className="text-brand-text shrink-0 text-sm font-bold">Departures</span>
       </span>
       {row && route ? (
-        <span className="border-line mt-2 flex items-center justify-between gap-2 border-t pt-2">
+        <span className="mt-2 flex items-center justify-between gap-2">
           <span className="flex min-w-0 items-center gap-2">
             <span className="size-3 shrink-0 rounded-full" style={{ background: `#${route.color}` }} aria-hidden />
             <span className="truncate font-bold">
@@ -685,13 +686,9 @@ function NearestCard({ nearby, now, onOpen }: { nearby: NearbyResponse; now: num
             </span>
           </span>
           <span className="flex shrink-0 items-center gap-2">
+            {row.source !== 'live' ? <span className="text-muted text-sm">{row.source === 'estimate' ? 'Estimate' : 'Scheduled'}</span> : null}
+            {level ? <CatchStatus level={level} /> : null}
             <span className="tabular text-lg font-extrabold">{time}</span>
-            {row.source !== 'live' ? <span className="text-muted text-xs">{row.source === 'estimate' ? 'Estimate' : 'Scheduled'}</span> : null}
-            {level ? (
-              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${level === 'comfortable' ? 'bg-ok-bg text-ok-fg' : level === 'hurry' ? 'bg-hurry-bg text-hurry-fg' : 'bg-miss-bg text-miss-fg'}`}>
-                {level === 'comfortable' ? '✓ You have time' : level === 'hurry' ? '⚡ Hurry' : "✕ You'll miss it"}
-              </span>
-            ) : null}
           </span>
         </span>
       ) : null}

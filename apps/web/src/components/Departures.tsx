@@ -18,10 +18,17 @@ import {
   type RouteInfo,
   type WalkEstimate,
 } from '@twalk/core';
-import { CheckIcon, ClockIcon, HurryIcon, MissIcon, VehicleIcon, WarnIcon } from './icons.tsx';
+import { ClockIcon, HurryIcon, MissIcon, VehicleIcon, WarnIcon } from './icons.tsx';
 import { RouteChip, routeName } from './RouteChip.tsx';
 
 const ROWS_SHOWN = 3;
+
+/** "Harvard" names the same place as "Harvard Square"; "Ashmont" and "Braintree" don't. */
+export function sameStop(headsign: string, destination: string): boolean {
+  const norm = (x: string) => x.toLowerCase().replace(/\b(square|station|sq)\b/g, '').replace(/[^a-z0-9/]+/g, ' ').trim();
+  const a = norm(headsign);
+  return a.length > 0 && a === norm(destination);
+}
 
 interface RowText {
   main: string;
@@ -76,7 +83,7 @@ const SOURCE_SPOKEN: Record<DepartureRow['source'], string> = {
 
 function SourceLabel({ source }: { source: DepartureRow['source'] }) {
   return (
-    <span className={`inline-flex items-center gap-1 text-xs ${source === 'live' ? 'text-live font-semibold' : 'text-muted'}`}>
+    <span className={`inline-flex items-center gap-1 text-sm ${source === 'live' ? 'text-live font-semibold' : 'text-muted'}`}>
       {source === 'live' ? <span className="live-dot inline-block size-2 rounded-full bg-current" aria-hidden /> : null}
       {source === 'vehicle' ? <VehicleIcon /> : null}
       {source === 'scheduled' || source === 'estimate' ? <ClockIcon /> : null}
@@ -85,16 +92,21 @@ function SourceLabel({ source }: { source: DepartureRow['source'] }) {
   );
 }
 
-const CATCH_STYLE: Record<Catchability, string> = {
-  comfortable: 'bg-ok-bg text-ok-fg',
+const CATCH_STYLE: Record<Exclude<Catchability, 'comfortable'>, string> = {
   hurry: 'bg-hurry-bg text-hurry-fg',
   miss: 'bg-miss-bg text-miss-fg',
 };
 
-function CatchBadge({ level }: { level: Catchability }) {
-  const Icon = level === 'comfortable' ? CheckIcon : level === 'hurry' ? HurryIcon : MissIcon;
+/**
+ * Whether you'll make it. Only Hurry and You'll miss it are shown: "you have
+ * time" is the usual case, and a chip on every row drowned out the two that
+ * matter (the row's spoken text still says it in words).
+ */
+export function CatchStatus({ level }: { level: Catchability }) {
+  if (level === 'comfortable') return null;
+  const Icon = level === 'hurry' ? HurryIcon : MissIcon;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${CATCH_STYLE[level]}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-semibold whitespace-nowrap ${CATCH_STYLE[level]}`}>
       <Icon />
       {CATCHABILITY_LABEL[level]}
     </span>
@@ -107,6 +119,8 @@ function Row(props: {
   now: number;
   walk: WalkEstimate | null;
   stale: boolean;
+  /** Every row in the group goes the same way, and the heading already says where. */
+  hideHeadsign: boolean;
 }) {
   const { group: g, row: r, now, walk } = props;
   const t = rowText(g, r, now);
@@ -131,16 +145,17 @@ function Row(props: {
     .join(', ');
 
   return (
-    <li className={`bg-surface-2 flex items-start justify-between gap-3 rounded-xl px-3 py-2.5 ${props.stale ? 'opacity-60' : ''}`}>
+    <li className={`flex items-center justify-between gap-3 py-2 ${props.stale ? 'opacity-60' : ''}`}>
       <span className="visually-hidden">{spoken}</span>
       <div className="min-w-0 flex-1" aria-hidden>
-        <div className="text-[17px] leading-snug font-bold break-words">{r.headsign}</div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+        {props.hideHeadsign ? null : <div className="text-[17px] leading-snug font-bold break-words">{r.headsign}</div>}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <SourceLabel source={r.source} />
+          {catchInfo ? <CatchStatus level={catchInfo.level} /> : null}
           {notes.map((n) => (
             <span
               key={n}
-              className={`inline-flex items-center gap-1 text-xs ${r.mayNotRun || r.canceled || r.stalled ? 'text-warn-text font-semibold' : 'text-muted'}`}
+              className={`inline-flex items-center gap-1 text-sm ${r.mayNotRun || r.canceled || r.stalled ? 'text-warn-text font-semibold' : 'text-muted'}`}
             >
               {r.mayNotRun || r.stalled ? <WarnIcon /> : null}
               {n}
@@ -148,9 +163,8 @@ function Row(props: {
           ))}
         </div>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-1" aria-hidden>
+      <div className="shrink-0" aria-hidden>
         <span className={`tabular text-xl leading-tight font-extrabold ${r.canceled ? 'text-muted line-through' : ''}`}>{t.main}</span>
-        {catchInfo ? <CatchBadge level={catchInfo.level} /> : null}
       </div>
     </li>
   );
@@ -172,6 +186,9 @@ export function DepartureGroupView(props: {
   const visible = g.rows.filter((r) => !rowText(g, r, now).hidden).slice(0, ROWS_SHOWN);
   const destination = g.destination || g.directionName;
   const headingId = `g-${g.routeId}-${g.directionId}`;
+  // "Harvard" three times under "Outbound to Harvard Square" says nothing new.
+  const oneHeadsign = visible.length > 0 && visible.every((r) => r.headsign === visible[0]!.headsign);
+  const hideHeadsign = oneHeadsign && !!destination && sameStop(visible[0]!.headsign, destination);
 
   return (
     <section aria-labelledby={headingId}>
@@ -184,26 +201,26 @@ export function DepartureGroupView(props: {
         </span>
       </h3>
       {g.liveUnavailable ? (
-        <p className="text-warn-text mt-1 text-xs font-semibold">Live times unavailable: showing the schedule</p>
+        <p className="text-warn-text mt-1 text-sm font-semibold">Live times unavailable: showing the schedule</p>
       ) : null}
       {g.headway && visible.length === 0 ? (
         <p className="mt-1 text-sm">
           <span className="font-semibold">{formatHeadway(g.headway.minMinutes, g.headway.maxMinutes).text}</span>{' '}
-          <span className="text-muted inline-flex items-center gap-1 text-xs">
+          <span className="text-muted inline-flex items-center gap-1 text-sm">
             <ClockIcon /> Scheduled; no live predictions right now
           </span>
         </p>
       ) : null}
       {!g.headway && visible.length === 0 ? <p className="text-muted mt-1 text-sm">No more departures in the next 90 minutes.</p> : null}
       {visible.length > 0 ? (
-        <ul className="space-y-2">
+        <ul>
           {visible.map((r) => (
-            <Row key={r.key} group={g} row={r} now={now} walk={walk} stale={stale} />
+            <Row key={r.key} group={g} row={r} now={now} walk={walk} stale={stale} hideHeadsign={hideHeadsign} />
           ))}
         </ul>
       ) : null}
       {age != null && stale ? (
-        <p className={`mt-1 text-xs ${veryOld ? 'text-warn-text font-semibold' : 'text-muted'}`} role={veryOld ? 'status' : undefined}>
+        <p className={`mt-1 text-sm ${veryOld ? 'text-warn-text font-semibold' : 'text-muted'}`} role={veryOld ? 'status' : undefined}>
           {veryOld ? `Out of date: ${formatAge(age)}` : formatAge(age)}
         </p>
       ) : null}

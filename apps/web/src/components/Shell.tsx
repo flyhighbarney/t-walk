@@ -5,19 +5,21 @@ import { BookmarkIcon, MapIcon, NowIcon, RouteIcon, WalkIcon } from './icons.tsx
 export function AppHeader({ title, children, overlay = false }: { title: string; children?: ReactNode; overlay?: boolean }) {
   return (
     <header
-      className={`${overlay ? 'bg-chrome backdrop-blur' : 'bg-bg'} sticky top-0 z-20 flex items-center justify-between gap-3 px-4 pb-2`}
+      className={`${overlay ? 'bg-chrome backdrop-blur' : 'bg-bg'} sticky top-0 z-20 px-4 pb-2`}
       style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
     >
-      <div className="flex items-center gap-3">
-        <span className="bg-brand text-on-brand flex size-10 items-center justify-center rounded-full" aria-hidden>
-          <WalkIcon className="size-5" />
-        </span>
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          {title}
-          <span className="visually-hidden"> · T-Walk</span>
-        </h1>
+      {/* Lined up with the content column (max-w-xl less its px-4), which is centred on a tablet. */}
+      <div className={`flex min-h-11 items-center justify-between gap-3 ${overlay ? '' : 'mx-auto max-w-[34rem]'}`}>
+        <div className="flex items-center gap-2">
+          {/* The app's mark, small: the tab bar already says where you are. */}
+          <WalkIcon className="text-muted size-5" />
+          <h1 className="text-2xl font-extrabold tracking-tight">
+            {title}
+            <span className="visually-hidden"> · T-Walk</span>
+          </h1>
+        </div>
+        {children}
       </div>
-      {children}
     </header>
   );
 }

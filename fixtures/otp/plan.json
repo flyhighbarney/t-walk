@@ -55,7 +55,7 @@
                 "to": { "name": "Harvard Square", "lat": 42.3732, "lon": -71.1189, "stop": { "gtfsId": "mbta:B9", "platformCode": null } },
                 "route": { "gtfsId": "mbta:1", "shortName": "1", "longName": "Harvard Square - Nubian Station", "color": "FFC72C", "textColor": "000000" },
                 "trip": { "gtfsId": "mbta:B-0805", "tripHeadsign": "Harvard" },
-                "legGeometry": { "points": "_p~iF~ps|U_ulLnnqC" },
+                "legGeometry": { "points": "gzoaGvnvpLrg@jcDku@fYwe@v~@wo@~}A" },
                 "steps": [], "intermediatePlaces": [{ "name": "a" }, { "name": "b" }, { "name": "c" }],
                 "alerts": [],
                 "fareProducts": [{ "id": "subway-2.40", "product": { "name": "Subway fare", "price": { "amount": 2.4, "currency": { "code": "USD" } } } }]

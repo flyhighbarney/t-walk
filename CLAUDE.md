@@ -7,9 +7,18 @@ Live MBTA departures by walking time. npm workspaces: `packages/core`, `apps/ser
 - `npm run dev` runs server and web. See README.md for OTP setup and architecture.
 
 ## Status
-Phases 1-5 done (see README.md). Phase 6 in progress: core history model done; server recording, persistence and planner wiring still to do.
+Phases 1-5 done (see README.md). Phase 6 in progress: core history model, server recording, persistence and planner wiring done; showing "usually runs N min late" in the transfer text and the README note still to do.
 
 ## Change log (newest first)
+- 2026-10-16 (hourly run 3): Phase 6 slice 2. `apps/server/src/live/delays.ts` (`DelayRecorder`) watches `LiveStore.predictions` through the new `store.observer`: first-shown time vs. last-seen time when a prediction goes away gives a delay sample (needs 5+ min lead, ignores cancelled/skipped, dropped-early and >30 min gaps). Saved to `data/history.json` every 5 min and on shutdown, loaded at start. `Planner` takes `history`; `mapItinerary` takes `historyBuffer(leg)` (route + arrival stop) and passes it to `transferRisk`. New `tests/history.test.ts` (6 tests). Verified first: typecheck, lint, 184 unit tests clean. Now 190 unit, 23 e2e pass (one e2e run had 2 trips flakes that passed on rerun).
+- 2026-10-16: Design review fixes (`docs/design-review-2026-10-16.md`).
+  - Now: departure rows sit straight on the stop card (no inner cards), and the headsign is dropped when every row goes where the heading says (`sameStop`). Hurry / You'll miss it are a chip after the Live label; "you have time" is shown only to screen readers. Labels, chips and notes went from 12 to 14 px.
+  - Header: a small grey walker replaces the white disc, and on a tablet the header lines up with the content column.
+  - One `StepFreeSwitch` on Trips and in the commute form. Days sit seven across. The Map's nearest-stop card uses the shared status in place of the text glyphs ✓ ⚡ ✕.
+  - Map: the sheet no longer shows a focus ring when it takes focus; the mode chips are quiet (ring when on, muted when off). The Where-to pill and Resume have no resting shadow.
+  - Trip ends use the requested names (`mapItinerary` `ends`), not OTP's "Destination". A walk-only trip card drops its one-walker strip. Navigation's footer reads "Arrive in N min · X to go".
+  - `fixtures/otp/plan.json`: the bus leg's polyline was Google's sample (California); it is now a Route 1 path up Mass Ave.
+  - 184 unit tests pass.
 - 2026-10-16 (hourly run 2): Verified last commit (typecheck, lint, e2e all clean). Phase 6 slice 1: `packages/core/src/history.ts` (`ArrivalHistory`: per route+stop delay samples, p80 clamped 0-5 min, needs 8+ samples, JSON round-trip). `transferRisk` takes an optional third arg `historyBuffer(legIndex)` that widens the arriving ride's buffer. Not wired to the server yet, so app behaviour is unchanged. 183 unit and 23 e2e tests pass.
 - 2026-10-16 (hourly run): Verified Phase 5. typecheck clean, 177 unit tests and 22 e2e tests pass. Fixed all lint warnings (`nav.ts` uses `startsWith`; `share/routes.ts` strips control chars with `\p{Cc}`). Added this file and `project standup meeting.md`.
 - 2026-10-16: UI polish audit (`docs/ui-polish-audit.md`). Warning/error text tokens that read in dark mode (`--warn-text`, `--miss-text`; was 1.41:1). Sentence case instead of uppercase eyebrows. Stop-sheet pin in the header. Feet/miles everywhere (`formatDistance` in core). 44 px chips. Edge fade on sideways rows. Map tap e2e covers vehicle-over-station. 177 unit and 23 e2e tests pass; Lighthouse Now 97/100/100.

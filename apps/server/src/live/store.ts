@@ -77,8 +77,11 @@ export class LiveStore {
   private readonly predByTrip = new Map<string, Set<string>>();
   private readonly predByRoute = new Map<string, Set<string>>();
 
+  /** Optional listener for prediction changes (arrival-history recording). */
+  observer: { onSet(p: Prediction): void; onDelete(p: Prediction): void } | null = null;
   readonly predictions = new Collection<Prediction>(
     (p, prev) => {
+      this.observer?.onSet(p);
       if (prev) this.unindex(prev);
       addTo(this.predByStop, p.stopId, p.id);
       addTo(this.predByTrip, p.tripId, p.id);
@@ -86,6 +89,7 @@ export class LiveStore {
       this.version++;
     },
     (p) => {
+      this.observer?.onDelete(p);
       this.unindex(p);
       this.version++;
     },

@@ -13,6 +13,7 @@ import {
 } from '@twalk/core';
 import { AlertList, useTripAlerts } from '../../components/Alerts.tsx';
 import { NowIcon, WarnIcon } from '../../components/icons.tsx';
+import { StepFreeSwitch } from '../../components/StepFreeSwitch.tsx';
 import { serverNow, useNow, usePageVisible } from '../../lib/live.ts';
 import { disablePush, enablePush, pushSupport, testPush, updatePush } from '../../lib/push.ts';
 import { navigate } from '../../lib/router.ts';
@@ -309,7 +310,8 @@ function CommuteForm({ initial, onDone }: { initial: Commute | null; onDone: () 
       </fieldset>
       <fieldset>
         <legend className="text-muted mb-1 text-sm font-semibold">Days</legend>
-        <div className="flex flex-wrap gap-1.5">
+        {/* Seven across, so no day wraps onto a line of its own. */}
+        <div className="grid grid-cols-7 gap-1">
           {DAY_LETTERS.map((d, i) => (
             <label key={d} className="relative">
               <input
@@ -318,15 +320,12 @@ function CommuteForm({ initial, onDone }: { initial: Commute | null; onDone: () 
                 onChange={(e) => setDays(e.target.checked ? [...days, i] : days.filter((x) => x !== i))}
                 className="peer absolute inset-0 cursor-pointer opacity-0"
               />
-              <span className="peer-checked:bg-brand peer-checked:text-on-brand bg-surface-2 peer-focus-visible:outline-focus flex min-h-11 min-w-12 items-center justify-center rounded-full px-2 text-sm font-bold peer-focus-visible:outline-3">{d}</span>
+              <span className="peer-checked:bg-brand peer-checked:text-on-brand bg-surface-2 peer-focus-visible:outline-focus flex min-h-11 items-center justify-center rounded-full text-sm font-bold peer-focus-visible:outline-3">{d}</span>
             </label>
           ))}
         </div>
       </fieldset>
-      <label className="flex min-h-11 items-center gap-2">
-        <input type="checkbox" checked={stepFree} onChange={(e) => setStepFree(e.target.checked)} className="size-5" />
-        <span className="font-bold">Step-free</span>
-      </label>
+      <StepFreeSwitch checked={stepFree} onChange={setStepFree} />
       {error ? (
         <p role="alert" className="text-miss-text flex items-center gap-1 text-sm">
           <WarnIcon /> {error}

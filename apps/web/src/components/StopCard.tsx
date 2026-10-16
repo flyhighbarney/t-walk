@@ -31,7 +31,11 @@ export function StopCard(props: {
   const lineColors = [...new Set(stop.routeIds.map((id) => routes.get(id)).filter((r) => r && r.mode !== 'bus' && r.listed).map((r) => chipColors(r!).background))].slice(0, 4);
   const groups = board?.groups.filter((g) => !props.routeFilter || g.routeId === props.routeFilter) ?? [];
   return (
-    <article aria-labelledby={headingId} className="bg-surface rounded-2xl p-4">
+    <article
+      aria-labelledby={headingId}
+      // In the map's sheet the name is the sheet's title, so the departures start right under it.
+      className={`bg-surface rounded-2xl px-4 pb-4 ${props.hideName && props.hidePin ? 'pt-1' : 'pt-4'}`}
+    >
       {props.hideName && props.hidePin ? (
         <h2 id={headingId} className="visually-hidden">
           {stop.name}

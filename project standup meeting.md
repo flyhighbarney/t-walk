@@ -1,5 +1,12 @@
 # T-Walk standup log
 
+## 2026-10-16 (hourly run 3)
+- **Verified:** typecheck, lint, 184 unit tests clean on the uncommitted design-review work before touching anything.
+- **Done:** Phase 6 slice 2. `DelayRecorder` turns live prediction changes into arrival-delay samples, saved to `data/history.json`; `Planner` and `mapItinerary` pass history into `transferRisk`. 6 new tests.
+- **After:** 190 unit and 23 e2e pass. One e2e run failed 2 trips tests (autocomplete option missing); both passed on rerun and in two full runs. Treat as a flake, watch it.
+- **Next:** show "usually runs N min late" in the transfer text, update the README line saying there is no history, and expose a count of samples for debugging.
+- **Not verified:** history with real MBTA data (needs a live run for days), screen reader pass, real-device touch/compass, long stop names on Map sheets.
+
 ## 2026-10-16 (hourly run 2)
 - **Verified:** on 9614949, typecheck, lint, 177 unit tests and 23 e2e tests all passed. After changes: 183 unit and 23 e2e pass.
 - **Done:** Phase 6 slice 1. Core `ArrivalHistory` (`history.ts`) plus optional `historyBuffer` arg in `transferRisk`, with 6 new tests. No app behaviour change yet.

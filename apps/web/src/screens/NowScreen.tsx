@@ -76,7 +76,7 @@ function WhereTo() {
           e.preventDefault();
           navigate('/go');
         }}
-        className="bg-brand text-on-brand shadow-float flex min-h-14 items-center justify-between gap-3 rounded-full px-5"
+        className="bg-brand text-on-brand flex min-h-14 items-center justify-between gap-3 rounded-full px-5"
       >
         <span className="min-w-0">
           <span className="block font-extrabold">Trip in progress</span>
@@ -93,7 +93,7 @@ function WhereTo() {
         e.preventDefault();
         navigate('/trips?focus=to');
       }}
-      className="bg-surface-2 shadow-float flex min-h-14 items-center gap-3 rounded-full px-5 text-lg font-bold"
+      className="bg-surface flex min-h-14 items-center gap-3 rounded-full px-5 text-lg font-bold"
     >
       <SearchIcon className="text-brand-text shrink-0" />
       <span className="flex-1">Where to?</span>

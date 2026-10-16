@@ -92,8 +92,10 @@ export function TripCard({ option, onOpen, tag }: { option: TripOption; onOpen: 
           </span>
           <span className="tabular text-lg font-bold">{minutes(option.durationS)}</span>
         </span>
-        {tag ? <span className="bg-surface-2 text-accent-text mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-bold">{tag}</span> : null}
+        {tag ? <span className="bg-surface-2 text-accent-text mt-1 inline-block rounded-full px-2 py-0.5 text-sm font-bold">{tag}</span> : null}
         {option.alsoAt.length > 0 ? <span className="text-muted mt-0.5 block text-sm">Also at {option.alsoAt.map(clock).join(', ')}</span> : null}
+        {/* Walking all the way is one walker and its minutes: the line below says that already. */}
+        {option.walkOnly ? null : (
         <span className="mt-2 flex flex-wrap items-center gap-1.5">
           {option.legs.map((l, i) => (
             <span key={i} className="inline-flex items-center gap-1.5">
@@ -102,6 +104,7 @@ export function TripCard({ option, onOpen, tag }: { option: TripOption; onOpen: 
             </span>
           ))}
         </span>
+        )}
         <span className="text-muted mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           <span>{minutes(option.walkS)} walk</span>
           {!option.walkOnly ? <span>{option.transfers === 0 ? 'No transfers' : `${option.transfers} ${option.transfers === 1 ? 'transfer' : 'transfers'}`}</span> : null}

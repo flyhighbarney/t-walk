@@ -291,7 +291,7 @@ function Navigator({ session, onChange }: { session: GoSession; onChange: (s: Go
           <div>
             <p className="tabular text-3xl font-extrabold">{state.phase === 'arrived' ? clock(now) : clock(state.eta)}</p>
             <p className="text-muted text-sm">
-              {state.phase === 'arrived' ? `Arrived at ${session.to.name}` : `${formatMinutes(minsLeft).text} · ${formatDistance(state.remainingM)} · arrival`}
+              {state.phase === 'arrived' ? `Arrived at ${session.to.name}` : `Arrive in ${formatMinutes(minsLeft).text} · ${formatDistance(state.remainingM)} to go`}
               {state.phase !== 'arrived' && pollLeg ? (liveRide ? ' · Live' : ' · Scheduled') : ''}
             </p>
           </div>
