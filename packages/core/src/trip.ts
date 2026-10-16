@@ -163,9 +163,15 @@ export const FREQUENT_GAP_S = 10 * 60;
  * `nextGap(i)`: for the ride at legs[i], how long until the next vehicle of
  * its line leaves the same stop (seconds), if known.
  */
-export function transferRisk(legs: readonly TripLeg[], nextGap: (legIndex: number) => number | null = () => null): TransferRisk {
+export function transferRisk(
+  legs: readonly TripLeg[],
+  nextGap: (legIndex: number) => number | null = () => null,
+  /** Seconds of observed lateness to add to the buffer for the ride at legs[i], if history has any. */
+  historyBuffer: (legIndex: number) => number | null = () => null,
+): TransferRisk {
   const transfers: TransferCheck[] = [];
   let prev: TripLeg | null = null;
+  let prevIndex = -1;
   let walkS = 0;
   legs.forEach((leg, i) => {
     if (!leg.transit) {
@@ -175,19 +181,21 @@ export function transferRisk(legs: readonly TripLeg[], nextGap: (legIndex: numbe
     if (prev && leg.stayOn) {
       // Same vehicle carrying on: nothing to catch.
       prev = leg;
+      prevIndex = i;
       walkS = 0;
       return;
     }
     if (prev) {
       const gapS = (bestTime(leg.start) - bestTime(prev.end)) / 1000;
       const spareS = gapS - walkS;
-      const bufferS = arrivalBufferS(prev.source, prev.mode);
+      const bufferS = arrivalBufferS(prev.source, prev.mode) + (historyBuffer(prevIndex) ?? 0);
       const nextGapS = nextGap(i);
       let level: TransferCheck['level'] = spareS >= 2 * bufferS ? 'low' : spareS >= bufferS ? 'medium' : 'high';
       if (level === 'high' && nextGapS != null && nextGapS <= FREQUENT_GAP_S) level = 'medium';
       transfers.push({ at: leg.from.name, spareS, bufferS, walkS, nextGapS, level });
     }
     prev = leg;
+    prevIndex = i;
     walkS = 0;
   });
   const level = transfers.reduce<RiskLevel>((worst, t) => (RANK[t.level] > RANK[worst] ? t.level : worst), 'none');
