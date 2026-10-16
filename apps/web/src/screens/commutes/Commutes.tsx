@@ -122,10 +122,10 @@ function CommuteCard({ c, onEdit }: { c: Commute; onEdit: () => void }) {
   };
 
   return (
-    <article id={c.id} aria-labelledby={headingId} className="bg-surface rounded-2xl p-4">
+    <article id={c.id} aria-labelledby={headingId} className="bg-surface rounded-xl p-4">
       <header className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 id={headingId} className="text-xl font-extrabold break-words">
+          <h3 id={headingId} className="font-serif text-xl font-bold break-words">
             {c.name}
           </h3>
           <p className="text-muted text-sm">
@@ -191,7 +191,7 @@ function CommuteCard({ c, onEdit }: { c: Commute; onEdit: () => void }) {
           />
           <span
             aria-hidden
-            className="peer-checked:bg-brand bg-surface-3 peer-focus-visible:outline-focus relative h-8 w-14 shrink-0 rounded-full peer-disabled:opacity-50 peer-focus-visible:outline-3 after:absolute after:top-1 after:left-1 after:size-6 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-6"
+            className="peer-checked:bg-brand bg-surface-3 peer-focus-visible:outline-focus relative h-8 w-14 shrink-0 rounded-full peer-disabled:opacity-50 peer-focus-visible:outline-3 after:absolute after:top-1 after:left-1 after:size-6 after:rounded-full after:bg-white peer-checked:after:bg-on-brand after:transition-transform peer-checked:after:translate-x-6"
           />
           <span className="font-bold">Leave-now notifications</span>
         </label>
@@ -277,7 +277,7 @@ function CommuteForm({ initial, onDone }: { initial: Commute | null; onDone: () 
   };
 
   return (
-    <section aria-label={initial ? 'Edit commute' : 'New commute'} className="bg-surface space-y-3 rounded-2xl p-4">
+    <section aria-label={initial ? 'Edit commute' : 'New commute'} className="bg-surface space-y-3 rounded-xl p-4">
       <div>
         <label htmlFor={nameId} className="text-muted mb-1 block text-sm font-semibold">
           Name
@@ -349,7 +349,7 @@ export function CommutesSection() {
   return (
     <section aria-labelledby="commutes-h" className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 id="commutes-h" className="text-lg font-bold">
+        <h2 id="commutes-h" className="font-serif text-lg font-bold">
           Commutes
         </h2>
         {!editing ? (
@@ -360,7 +360,7 @@ export function CommutesSection() {
       </div>
       {editing ? <CommuteForm initial={editing === 'new' ? null : editing} onDone={() => setEditing(null)} /> : null}
       {commutes.length === 0 && !editing ? (
-        <p className="bg-surface text-muted rounded-2xl p-4 text-sm">Save a trip you make often, like home to work, to see when to leave and get alerts that affect it.</p>
+        <p className="bg-surface text-muted rounded-xl p-4 text-sm">Save a trip you make often, like home to work, to see when to leave and get alerts that affect it.</p>
       ) : null}
       {commutes.filter((c) => editing === 'new' || editing === null || c.id !== (editing as Commute).id).map((c) => (
         <CommuteCard key={c.id} c={c} onEdit={() => setEditing(c)} />

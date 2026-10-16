@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ArrivalHistory, MAX_EXTRA_BUFFER_S, MIN_SAMPLES, percentile, type HistoryKey } from './history.ts';
-import { transferRisk, type TripLeg } from './trip.ts';
+import { describeTransfer, transferRisk, type TripLeg } from './trip.ts';
 
 const key: HistoryKey = { routeId: 'Red', stopId: 'place-sstat' };
 const fill = (h: ArrivalHistory, delays: number[], k = key) => delays.forEach((delayS, i) => h.record(k, { delayS, at: i }));
@@ -74,5 +74,12 @@ describe('transferRisk with history', () => {
     expect(worse.level).toBe('medium');
     expect(transferRisk(legs, () => null, (i) => (i === 2 ? 120 : null)).level).toBe('low');
     expect(transferRisk(legs, () => null, (i) => (i === 0 ? 300 : null)).level).toBe('high');
+  });
+
+  it('says how late the arriving ride usually runs', () => {
+    const [check] = transferRisk(legs, () => null, (i) => (i === 0 ? 120 : null)).transfers;
+    expect(check!.usuallyLateS).toBe(120);
+    expect(describeTransfer(check!)).toBe('3 min to spare after a 1 min walk; the ride before usually runs 2 min late');
+    expect(describeTransfer(transferRisk(legs).transfers[0]!)).not.toContain('usually');
   });
 });

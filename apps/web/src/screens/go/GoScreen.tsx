@@ -92,7 +92,7 @@ export default function GoScreen() {
   if (!session) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center gap-4 px-6 text-center">
-        <h1 className="text-2xl font-extrabold">No trip in progress</h1>
+        <h1 className="font-serif text-2xl font-bold">No trip in progress</h1>
         <p className="text-muted">Plan a trip, open the one you want and tap Start. T-Walk then guides you there, step by step.</p>
         <button type="button" onClick={() => navigate('/trips', { replace: true })} className="bg-brand text-on-brand min-h-12 rounded-full px-6 font-bold">
           Plan a trip
@@ -240,11 +240,11 @@ function Navigator({ session, onChange }: { session: GoSession; onChange: (s: Go
 
       {/* Banner: what to do next. Read out when it changes. */}
       <header className="absolute inset-x-3 top-3 z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className={`shadow-float rounded-3xl p-4 ${state.alight === 'now' ? 'animate-pulse' : ''}`} style={bannerStyle}>
+        <div className={`shadow-float rounded-2xl p-4 ${state.alight === 'now' ? 'animate-pulse' : ''}`} style={bannerStyle}>
           <div className="flex items-center gap-3" aria-live={state.alight === 'none' ? 'polite' : 'assertive'} aria-atomic="true">
             <ManeuverIcon m={state.maneuver} className="shrink-0" />
             <div className="min-w-0 flex-1">
-              {state.distanceM != null ? <p className="tabular text-3xl leading-none font-extrabold">{formatDistance(state.distanceM)}</p> : null}
+              {state.distanceM != null ? <p className="tabular font-mono text-3xl leading-none font-bold">{formatDistance(state.distanceM)}</p> : null}
               <p className={`${state.distanceM != null ? 'mt-1 text-lg' : 'text-2xl'} leading-tight font-extrabold`}>{state.primary}</p>
               {state.secondary ? <p className="mt-0.5 text-sm font-semibold opacity-90">{state.secondary}</p> : null}
             </div>
@@ -271,7 +271,7 @@ function Navigator({ session, onChange }: { session: GoSession; onChange: (s: Go
       </div>
 
       {/* Sheet: arrival, and what you can do */}
-      <section aria-label="Trip progress" className="bg-surface shadow-float absolute inset-x-0 bottom-0 z-20 rounded-t-3xl px-4 pt-3" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+      <section aria-label="Trip progress" className="bg-surface shadow-float absolute inset-x-0 bottom-0 z-20 rounded-t-2xl px-4 pt-3" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
         <span className="bg-line mx-auto mb-3 block h-1.5 w-10 rounded-full" aria-hidden />
         {fixState.kind !== 'ok' && state.phase !== 'ride' ? <LocationNote kind={fixState.kind} onTurnOn={() => setOptIn(true)} /> : null}
         {showReplan ? (
@@ -281,7 +281,7 @@ function Navigator({ session, onChange }: { session: GoSession; onChange: (s: Go
               e.preventDefault();
               navigate(replanHref!);
             }}
-            className="bg-hurry-bg text-hurry-fg mb-3 flex items-center gap-2 rounded-2xl p-3 text-sm font-bold"
+            className="bg-hurry-bg text-hurry-fg mb-3 flex items-center gap-2 rounded-xl p-3 text-sm font-bold"
           >
             <WarnIcon className="shrink-0" />
             {state.late ? `At this pace you'd miss it. Re-plan from here` : `You're off the route. Re-plan from here`}
@@ -289,7 +289,7 @@ function Navigator({ session, onChange }: { session: GoSession; onChange: (s: Go
         ) : null}
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="tabular text-3xl font-extrabold">{state.phase === 'arrived' ? clock(now) : clock(state.eta)}</p>
+            <p className="tabular font-mono text-3xl font-bold">{state.phase === 'arrived' ? clock(now) : clock(state.eta)}</p>
             <p className="text-muted text-sm">
               {state.phase === 'arrived' ? `Arrived at ${session.to.name}` : `Arrive in ${formatMinutes(minsLeft).text} · ${formatDistance(state.remainingM)} to go`}
               {state.phase !== 'arrived' && pollLeg ? (liveRide ? ' · Live' : ' · Scheduled') : ''}
@@ -354,7 +354,7 @@ function WaitCard({ state, now, live, hasVehicle }: { state: NavState; now: numb
   if (state.departsAt == null) return null;
   const mins = Math.round((state.departsAt - now) / 60_000);
   return (
-    <div className="bg-surface shadow-float mt-2 rounded-2xl p-3" role="status" aria-live="polite">
+    <div className="bg-surface shadow-float mt-2 rounded-xl p-3" role="status" aria-live="polite">
       <p className="font-bold">
         Leaves <span className="tabular">{clock(state.departsAt)}</span>
         <span className="text-muted font-normal"> · {mins <= 0 ? 'now' : `in ${formatMinutes(mins).text}`}</span>
@@ -374,7 +374,7 @@ function WaitCard({ state, now, live, hasVehicle }: { state: NavState; now: numb
 function LocationNote({ kind, onTurnOn }: { kind: 'off' | 'locating' | 'denied' | 'unavailable'; onTurnOn: () => void }) {
   if (kind === 'locating') return <p className="text-muted mb-3 text-sm">Finding your location…</p>;
   return (
-    <div className="bg-surface-2 mb-3 flex items-center gap-3 rounded-2xl p-3 text-sm">
+    <div className="bg-surface-2 mb-3 flex items-center gap-3 rounded-xl p-3 text-sm">
       <span className="flex-1">
         {kind === 'off'
           ? 'Turn on location for turn-by-turn walking directions.'
@@ -395,7 +395,7 @@ function Steps({ session, legIndex }: { session: GoSession; legIndex: number }) 
   return (
     <ol className="no-scrollbar mt-3 max-h-[40dvh] space-y-2 overflow-y-auto" aria-label="All steps">
       {session.option.legs.map((l, i) => (
-        <li key={i} className={`rounded-2xl p-3 ${i === legIndex ? 'bg-surface-2' : ''} ${i < legIndex ? 'text-muted' : ''}`} aria-current={i === legIndex ? 'step' : undefined}>
+        <li key={i} className={`rounded-xl p-3 ${i === legIndex ? 'bg-surface-2' : ''} ${i < legIndex ? 'text-muted' : ''}`} aria-current={i === legIndex ? 'step' : undefined}>
           <p className="font-bold">
             {l.transit ? `${lineTitle(l).replace(/^the /, '')}${l.headsign ? ` toward ${l.headsign}` : ''}` : `Walk to ${l.to.name}`}
             <span className="text-muted tabular font-normal"> · {clock(l.start.estimated ?? l.start.scheduled)}</span>

@@ -60,5 +60,5 @@ export default function TripMap({ option }: { option: TripOption }) {
     };
   }, [option]);
   if (failed) return null;
-  return <div ref={el} className="h-56 w-full overflow-hidden rounded-2xl" role="img" aria-label="Map of this trip's route" />;
+  return <div ref={el} className="h-56 w-full overflow-hidden rounded-xl" role="img" aria-label="Map of this trip's route" />;
 }

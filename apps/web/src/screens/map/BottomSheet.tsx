@@ -36,7 +36,7 @@ export function BottomSheet(props: { title: ReactNode; label: string; onClose: (
       aria-labelledby={titleId}
       data-sheet={props.label}
       tabIndex={-1}
-      className={`sheet-enter bg-surface shadow-float absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-3xl outline-none ${tall ? 'h-[82%]' : 'max-h-[60%]'}`}
+      className={`sheet-enter bg-surface shadow-float absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-2xl outline-none ${tall ? 'h-[82%]' : 'max-h-[60%]'}`}
     >
       <button
         type="button"
@@ -48,7 +48,7 @@ export function BottomSheet(props: { title: ReactNode; label: string; onClose: (
         <span className="bg-surface-3 block h-1.5 w-12 rounded-full" />
       </button>
       <div className="flex items-start justify-between gap-3 px-4 pb-2">
-        <h2 id={titleId} className="min-w-0 text-2xl leading-tight font-extrabold break-words">
+        <h2 id={titleId} className="font-serif min-w-0 text-2xl leading-tight font-bold break-words">
           {props.title}
         </h2>
         <div className="flex shrink-0 gap-2">

@@ -455,7 +455,7 @@ export default function MapScreen({ path }: { path: string }) {
           </div>
         ) : null}
         {mapError ? (
-          <p className="bg-surface-2 absolute inset-x-6 top-1/2 z-10 rounded-2xl p-4 text-center text-sm">
+          <p className="bg-surface-2 absolute inset-x-6 top-1/2 z-10 rounded-xl p-4 text-center text-sm">
             This device can't draw the map. Use the list button on the right to see the vehicles and stations around downtown.
           </p>
         ) : null}
@@ -495,7 +495,7 @@ export default function MapScreen({ path }: { path: string }) {
           </div>
           {layers.modes.bus && zoom < BUS_MIN_ZOOM ? <p className="bg-surface-2 text-muted pointer-events-auto inline-block rounded-full px-3 py-1 text-xs shadow-float">Zoom in to see buses</p> : null}
           {(statusTone === 'stale' || statusTone === 'down') && !bannerClosed ? (
-            <div role="alert" className="bg-warn-bg text-warn-fg pointer-events-auto flex items-start gap-3 rounded-2xl p-3 shadow-float">
+            <div role="alert" className="bg-warn-bg text-warn-fg pointer-events-auto flex items-start gap-3 rounded-xl p-3 shadow-float">
               <WarnIcon className="mt-0.5 shrink-0" />
               <p className="flex-1 text-sm">
                 <strong className="block">Live data is interrupted</strong>
@@ -626,7 +626,7 @@ function MapSearch({ onPick }: { onPick: (s: StopSummary) => void }) {
         ) : null}
       </label>
       {results.length > 0 ? (
-        <ul className="bg-surface-2 shadow-float divide-line absolute inset-x-0 top-14 z-30 divide-y overflow-hidden rounded-2xl">
+        <ul className="bg-surface-2 shadow-float divide-line absolute inset-x-0 top-14 z-30 divide-y overflow-hidden rounded-xl">
           {results.map((s) => (
             <li key={s.id}>
               <button
@@ -668,7 +668,7 @@ function NearestCard({ nearby, now, onOpen }: { nearby: NearbyResponse; now: num
     <button
       type="button"
       onClick={() => onOpen(stop.id)}
-      className="bg-surface-2 shadow-float absolute inset-x-3 bottom-3 z-20 rounded-2xl p-3 text-left"
+      className="bg-surface-2 shadow-float absolute inset-x-3 bottom-3 z-20 rounded-xl p-3 text-left"
     >
       <span className="flex items-center justify-between gap-2">
         <span className="min-w-0">

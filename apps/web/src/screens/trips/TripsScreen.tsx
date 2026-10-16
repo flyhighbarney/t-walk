@@ -196,8 +196,8 @@ export default function TripsScreen({ path }: { path: string }) {
           </button>
         </div>
         <main className="pb-tabbar mx-auto max-w-xl space-y-4 px-4 pt-2">
-          <section aria-labelledby="trip-h" className="bg-surface rounded-2xl p-4">
-            <h2 id="trip-h" className="tabular text-2xl font-extrabold">
+          <section aria-labelledby="trip-h" className="bg-surface rounded-xl p-4">
+            <h2 id="trip-h" className="tabular font-mono text-2xl font-bold">
               {clock(open.start)} – {clock(open.end)}
             </h2>
             <p className="text-muted mt-1">
@@ -208,8 +208,9 @@ export default function TripsScreen({ path }: { path: string }) {
               <p className={`mt-2 flex gap-2 rounded-xl p-2 text-sm ${open.risk.level === 'high' ? 'bg-miss-bg text-miss-fg' : 'bg-hurry-bg text-hurry-fg'}`}>
                 <WarnIcon className="mt-0.5 shrink-0" />
                 <span>
-                  {RISK_LABEL[open.risk.level]}: {open.risk.transfers.filter((t) => t.level === open.risk.level).map(describeTransfer).join('; ')}. Based on live
-                  data only (no history yet).
+                  {RISK_LABEL[open.risk.level]}: {open.risk.transfers.filter((t) => t.level === open.risk.level).map(describeTransfer).join('; ')}. {open.risk.transfers.some((t) => t.usuallyLateS > 0)
+                    ? 'Includes how late these rides usually run.'
+                    : 'Based on live data only (no history yet).'}
                 </span>
               </p>
             ) : null}
@@ -220,14 +221,14 @@ export default function TripsScreen({ path }: { path: string }) {
             ) : null}
           </section>
           {tripAlerts.length > 0 ? (
-            <section aria-label="Alerts on this trip" className="bg-surface rounded-2xl p-4 pt-1">
+            <section aria-label="Alerts on this trip" className="bg-surface rounded-xl p-4 pt-1">
               <AlertList alerts={tripAlerts} stepFree={stepFree} />
             </section>
           ) : null}
-          <Suspense fallback={<div className="bg-surface h-56 rounded-2xl" />}>
+          <Suspense fallback={<div className="bg-surface h-56 rounded-xl" />}>
             <TripMap option={open} />
           </Suspense>
-          <ol className="bg-surface rounded-2xl p-4" aria-label="Steps">
+          <ol className="bg-surface rounded-xl p-4" aria-label="Steps">
             {open.legs.map((leg, i) => (
               <div key={i}>
                 <LegView leg={leg} next={open.legs[i + 1]} transfer={notes.get(i)} onMissed={leg.transit ? () => void whatIfMissed(open, i) : undefined} />
@@ -258,7 +259,7 @@ export default function TripsScreen({ path }: { path: string }) {
       <AppHeader title="Trips" />
       <main className="pb-tabbar mx-auto max-w-xl space-y-4 px-4 pt-2">
         {inProgress ? (
-          <button type="button" onClick={() => navigate('/go')} className="bg-brand text-on-brand shadow-float flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl px-4 text-left">
+          <button type="button" onClick={() => navigate('/go')} className="bg-brand text-on-brand shadow-float flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-4 text-left">
             <span>
               <span className="block font-extrabold">Trip in progress</span>
               <span className="block text-sm">To {inProgress.to.name}</span>
@@ -266,7 +267,7 @@ export default function TripsScreen({ path }: { path: string }) {
             <span className="font-extrabold">Resume</span>
           </button>
         ) : null}
-        <section aria-label="Plan a trip" className="bg-surface space-y-3 rounded-2xl p-4">
+        <section aria-label="Plan a trip" className="bg-surface space-y-3 rounded-xl p-4">
           <div className="flex items-end gap-2">
             <div className="min-w-0 flex-1 space-y-3">
               <PlaceField label="From" value={from} onChange={setFrom} here={here} onUseHere={() => useHere(setFrom)} />

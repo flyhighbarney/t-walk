@@ -50,14 +50,14 @@ export default function ShareScreen({ path }: { path: string }) {
       {state === 'loading' ? <p className="text-muted">Loading…</p> : null}
       {state === 'ended' ? (
         <>
-          <h1 className="text-3xl font-extrabold">This shared trip has ended</h1>
+          <h1 className="font-serif text-3xl font-bold">This shared trip has ended</h1>
           <p className="text-muted">The person stopped sharing, arrived a while ago, or the link is more than 6 hours old.</p>
         </>
       ) : null}
       {state === 'error' ? <p className="bg-warn-bg text-warn-fg rounded-xl p-3">Couldn't load this right now. It will try again.</p> : null}
       {state === 'ok' && view ? (
-        <section aria-live="polite" className="bg-surface shadow-float space-y-2 rounded-3xl p-6">
-          <h1 className="text-xl font-bold">
+        <section aria-live="polite" className="bg-surface shadow-float space-y-2 rounded-2xl p-6">
+          <h1 className="font-serif text-xl font-bold">
             {view.name ? `${view.name} is` : "They're"} {view.arrived ? 'at' : 'on the way to'} {view.to}
           </h1>
           {view.arrived ? (

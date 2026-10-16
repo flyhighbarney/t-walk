@@ -13,7 +13,7 @@ export function AppHeader({ title, children, overlay = false }: { title: string;
         <div className="flex items-center gap-2">
           {/* The app's mark, small: the tab bar already says where you are. */}
           <WalkIcon className="text-muted size-5" />
-          <h1 className="text-2xl font-extrabold tracking-tight">
+          <h1 className="font-serif text-2xl font-bold tracking-tight">
             {title}
             <span className="visually-hidden"> · T-Walk</span>
           </h1>

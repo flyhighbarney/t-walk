@@ -93,6 +93,8 @@ export interface TransferCheck {
   spareS: number;
   /** The buffer this connection should have. */
   bufferS: number;
+  /** Seconds of the buffer that come from how late this ride usually runs (0 without history). */
+  usuallyLateS: number;
   walkS: number;
   /** When the next vehicle of that line leaves the same stop after this one, seconds later (from the timetable). */
   nextGapS: number | null;
@@ -188,11 +190,12 @@ export function transferRisk(
     if (prev) {
       const gapS = (bestTime(leg.start) - bestTime(prev.end)) / 1000;
       const spareS = gapS - walkS;
-      const bufferS = arrivalBufferS(prev.source, prev.mode) + (historyBuffer(prevIndex) ?? 0);
+      const usuallyLateS = historyBuffer(prevIndex) ?? 0;
+      const bufferS = arrivalBufferS(prev.source, prev.mode) + usuallyLateS;
       const nextGapS = nextGap(i);
       let level: TransferCheck['level'] = spareS >= 2 * bufferS ? 'low' : spareS >= bufferS ? 'medium' : 'high';
       if (level === 'high' && nextGapS != null && nextGapS <= FREQUENT_GAP_S) level = 'medium';
-      transfers.push({ at: leg.from.name, spareS, bufferS, walkS, nextGapS, level });
+      transfers.push({ at: leg.from.name, spareS, bufferS, usuallyLateS, walkS, nextGapS, level });
     }
     prev = leg;
     prevIndex = i;
@@ -208,9 +211,11 @@ export function describeTransfer(t: TransferCheck): string {
   const walk = Math.round(t.walkS / 60);
   const lead = spare <= 0 ? 'No time to spare' : `${spare} min to spare`;
   const base = walk > 0 ? `${lead} after a ${walk} min walk` : lead;
+  const late = Math.round(t.usuallyLateS / 60);
+  const withLate = late >= 1 ? `${base}; the ride before usually runs ${late} min late` : base;
   return t.nextGapS != null && t.nextGapS <= FREQUENT_GAP_S && t.level !== 'low'
-    ? `${base}; the next one is about ${Math.max(1, Math.round(t.nextGapS / 60))} min later`
-    : base;
+    ? `${withLate}; the next one is about ${Math.max(1, Math.round(t.nextGapS / 60))} min later`
+    : withLate;
 }
 
 export const RISK_LABEL: Record<RiskLevel, string> = {

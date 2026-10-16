@@ -1,5 +1,12 @@
 # T-Walk standup log
 
+## 2026-10-16 (hourly run 6)
+- **Verified:** the uncommitted run 4/5 edits (Manrope/Newsreader/JetBrains Mono type, flat radii, dark-mode switch knob fix): typecheck, lint, 190 unit and 23 e2e pass.
+- **Done:** Phase 6 finished. `TransferCheck.usuallyLateS`; transfer text says "the ride before usually runs N min late" once history widens the buffer; the trip risk note stops saying "no history yet" in that case; README updated; new test. `data-fixture/` gitignored.
+- **After:** 191 unit and 23 e2e pass, typecheck and lint clean.
+- **Next:** no phase left in the plan. Candidates: a debug count of history samples, a live multi-day check of recorded delays, screen reader pass.
+- **Not verified:** history with real MBTA data (needs days of live running), screen reader pass, real-device touch/compass, long stop names on Map sheets.
+
 ## 2026-10-16 (hourly run 3)
 - **Verified:** typecheck, lint, 184 unit tests clean on the uncommitted design-review work before touching anything.
 - **Done:** Phase 6 slice 2. `DelayRecorder` turns live prediction changes into arrival-delay samples, saved to `data/history.json`; `Planner` and `mapItinerary` pass history into `transferRisk`. 6 new tests.

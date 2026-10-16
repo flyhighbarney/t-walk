@@ -164,7 +164,7 @@ function Row(props: {
         </div>
       </div>
       <div className="shrink-0" aria-hidden>
-        <span className={`tabular text-xl leading-tight font-extrabold ${r.canceled ? 'text-muted line-through' : ''}`}>{t.main}</span>
+        <span className={`tabular font-mono text-xl leading-tight font-bold ${r.canceled ? 'text-muted line-through' : ''}`}>{t.main}</span>
       </div>
     </li>
   );

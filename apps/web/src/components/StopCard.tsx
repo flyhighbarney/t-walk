@@ -34,7 +34,7 @@ export function StopCard(props: {
     <article
       aria-labelledby={headingId}
       // In the map's sheet the name is the sheet's title, so the departures start right under it.
-      className={`bg-surface rounded-2xl px-4 pb-4 ${props.hideName && props.hidePin ? 'pt-1' : 'pt-4'}`}
+      className={`bg-surface rounded-xl px-4 pb-4 ${props.hideName && props.hidePin ? 'pt-1' : 'pt-4'}`}
     >
       {props.hideName && props.hidePin ? (
         <h2 id={headingId} className="visually-hidden">
@@ -43,7 +43,7 @@ export function StopCard(props: {
       ) : (
       <header className="mb-3 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h2 id={headingId} className={props.hideName ? 'visually-hidden' : 'flex items-center gap-2 text-2xl leading-tight font-extrabold break-words'}>
+          <h2 id={headingId} className={props.hideName ? 'visually-hidden' : 'font-serif flex items-center gap-2 text-2xl leading-tight font-bold break-words'}>
             {lineColors.length > 0 ? (
               <span className="flex shrink-0 gap-1" aria-hidden>
                 {lineColors.map((c) => (

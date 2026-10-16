@@ -172,9 +172,9 @@ export function BikeSheet({ station, updatedAt, onClose }: { station: BikeStatio
 
 function Stat({ label, value, note }: { label: string; value: number; note?: string }) {
   return (
-    <div className="bg-surface-2 rounded-2xl p-3">
+    <div className="bg-surface-2 rounded-xl p-3">
       <div className="text-muted text-sm font-semibold">{label}</div>
-      <div className="tabular text-3xl font-extrabold">{value}</div>
+      <div className="tabular font-mono text-3xl font-bold">{value}</div>
       {note ? <div className="text-muted text-xs">{note}</div> : null}
     </div>
   );
@@ -193,7 +193,7 @@ function Switch(props: { label: string; description: string; checked: boolean; o
       <input type="checkbox" role="switch" checked={props.checked} onChange={(e) => props.onChange(e.target.checked)} className="peer sr-only" />
       <span
         aria-hidden
-        className="peer-checked:bg-brand bg-surface-3 peer-focus-visible:outline-focus relative h-8 w-14 shrink-0 rounded-full peer-focus-visible:outline-3 after:absolute after:top-1 after:left-1 after:size-6 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-6"
+        className="peer-checked:bg-brand bg-surface-3 peer-focus-visible:outline-focus relative h-8 w-14 shrink-0 rounded-full peer-focus-visible:outline-3 after:absolute after:top-1 after:left-1 after:size-6 after:rounded-full after:bg-white peer-checked:after:bg-on-brand after:transition-transform peer-checked:after:translate-x-6"
       />
     </label>
   );

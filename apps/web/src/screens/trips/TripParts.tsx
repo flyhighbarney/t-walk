@@ -83,11 +83,11 @@ export function TripCard({ option, onOpen, tag }: { option: TripOption; onOpen: 
     .filter(Boolean)
     .join(', ');
   return (
-    <button type="button" onClick={onOpen} className="bg-surface w-full rounded-2xl p-4 text-left">
+    <button type="button" onClick={onOpen} className="bg-surface w-full rounded-xl p-4 text-left">
       <span className="visually-hidden">{spoken}</span>
       <span aria-hidden className="block">
         <span className="flex items-baseline justify-between gap-2">
-          <span className="tabular text-xl font-extrabold">
+          <span className="tabular font-mono text-xl font-bold">
             {clock(option.start)} – {clock(option.end)}
           </span>
           <span className="tabular text-lg font-bold">{minutes(option.durationS)}</span>

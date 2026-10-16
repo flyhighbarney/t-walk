@@ -177,7 +177,7 @@ export default function GoMap(props: GoMapProps) {
   }, [ready, props.follow, pos?.lat, pos?.lon, props.heading, props.phase, props.padding.top, props.padding.bottom]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (failed) {
-    return <p className="bg-surface-2 absolute inset-x-6 top-1/2 rounded-2xl p-4 text-center text-sm">This device can't draw the map. The directions above and below still work.</p>;
+    return <p className="bg-surface-2 absolute inset-x-6 top-1/2 rounded-xl p-4 text-center text-sm">This device can't draw the map. The directions above and below still work.</p>;
   }
   return (
     <div className="absolute inset-0">
