@@ -1,4 +1,5 @@
-import { formatWalk, type LiveStatus, type RouteInfo, type StopBoard, type StopSummary, type WalkEstimate } from '@twalk/core';
+import { formatWalk, type AlertView, type LiveStatus, type RouteInfo, type StopBoard, type StopSummary, type WalkEstimate } from '@twalk/core';
+import { AlertList } from './Alerts.tsx';
 import { navigate } from '../lib/router.ts';
 import { DepartureGroupView } from './Departures.tsx';
 import { MapIcon, RouteIcon, StarIcon, WalkIcon } from './icons.tsx';
@@ -20,6 +21,8 @@ export function StopCard(props: {
   routeFilter?: string | null;
   /** The sheet around it already shows the name. */
   hideName?: boolean;
+  alerts?: AlertView[];
+  stepFree?: boolean;
 }) {
   const { stop, walk, board, routes, status, now } = props;
   const headingId = `stop-${stop.id}`;
@@ -57,6 +60,11 @@ export function StopCard(props: {
           <StarIcon filled={props.pinned} />
         </button>
       </header>
+      {props.alerts?.length ? (
+        <div className="-mt-1 mb-3">
+          <AlertList alerts={props.alerts} stepFree={props.stepFree} max={2} />
+        </div>
+      ) : null}
       {!board ? (
         <p className="text-muted text-sm">Loading departures…</p>
       ) : groups.length === 0 ? (

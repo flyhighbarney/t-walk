@@ -31,6 +31,12 @@ import { openSse } from './sse.ts';
 import type { Planner } from '../plan/planner.ts';
 import type { Geocoder } from '../plan/geocode.ts';
 import { registerPlanRoutes } from '../plan/routes.ts';
+import { registerAlertRoutes } from './alerts.ts';
+import { registerOfflineRoutes } from './offline.ts';
+import { registerPushRoutes } from '../push/routes.ts';
+import type { PushStore } from '../push/store.ts';
+import type { PushSender } from '../push/notifier.ts';
+import type { Ingest } from '../live/ingest.ts';
 
 export interface AppDeps {
   getDb: () => GtfsDb;
@@ -38,6 +44,8 @@ export interface AppDeps {
   store: LiveStore;
   bikes?: BikesFeed | null;
   planner?: Planner | null;
+  ingest?: Ingest | null;
+  push?: { store: PushStore; sender: PushSender; publicKey: string } | null;
   geocoder?: Geocoder | null;
   clock: Clock;
   webDist?: string | null;
@@ -65,7 +73,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.get('/api/health', async () => boards.status());
 
   registerMapRoutes(app, { getDb: deps.getDb, store: deps.store, boards, clock, bikes: deps.bikes ?? null });
-  if (deps.planner && deps.geocoder) registerPlanRoutes(app, { planner: deps.planner, geocoder: deps.geocoder });
+  if (deps.planner && deps.geocoder) registerPlanRoutes(app, { planner: deps.planner, geocoder: deps.geocoder, now: () => clock.now() });
+  if (deps.ingest) registerAlertRoutes(app, { getDb: deps.getDb, store: deps.store, ingest: deps.ingest, clock });
+  if (deps.push) registerPushRoutes(app, deps.push);
+  registerOfflineRoutes(app, { getDb: deps.getDb, clock });
 
   app.get<{ Querystring: { lat?: string; lon?: string; radius?: string; limit?: string; pace?: string } }>(
     '/api/nearby',

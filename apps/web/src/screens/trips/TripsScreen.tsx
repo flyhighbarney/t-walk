@@ -10,6 +10,7 @@ import { useLocation } from '../../lib/location.ts';
 import { searchParam } from '../../lib/router.ts';
 import { useLocationOptIn, useStepFree, useWalkPace } from '../../lib/storage.ts';
 import { FilterChip } from '../map/OtherSheets.tsx';
+import { AlertList, useTripAlerts } from '../../components/Alerts.tsx';
 import { PlaceField } from './PlaceField.tsx';
 import { LegView, TripCard, clock, minutes, money, transferNotes } from './TripParts.tsx';
 import { bostonLocalNow, fetchPlan, planUrl, type Place, type TimeMode } from './tripsApi.ts';
@@ -76,6 +77,12 @@ export default function TripsScreen({ path }: { path: string }) {
 
   const options = useMemo(() => (plan ? sortOptions(plan.options, sort, timeMode === 'arrive') : []), [plan, sort, timeMode]);
   const open = options.find((o) => o.id === openId) ?? null;
+  const openRides = open?.legs.filter((l) => l.transit) ?? [];
+  const tripAlerts = useTripAlerts(
+    openRides.flatMap((l) => [l.from.stopId, l.to.stopId]).filter((s): s is string => !!s),
+    openRides.map((l) => l.routeId).filter((r): r is string => !!r),
+    stepFree,
+  );
 
   const useHere = (set: (p: Place) => void) => {
     if (!optIn) setOptIn(true);
@@ -136,6 +143,11 @@ export default function TripsScreen({ path }: { path: string }) {
               </button>
             ) : null}
           </section>
+          {tripAlerts.length > 0 ? (
+            <section aria-label="Alerts on this trip" className="bg-surface rounded-2xl p-4 pt-1">
+              <AlertList alerts={tripAlerts} stepFree={stepFree} />
+            </section>
+          ) : null}
           <Suspense fallback={<div className="bg-surface h-56 rounded-2xl" />}>
             <TripMap option={open} />
           </Suspense>

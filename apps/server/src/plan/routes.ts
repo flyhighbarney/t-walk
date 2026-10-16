@@ -17,9 +17,20 @@ function point(raw: unknown): { lat: number; lon: number } | null {
   return { lat, lon };
 }
 
-export function registerPlanRoutes(app: FastifyInstance, deps: { planner: Planner; geocoder: Geocoder }): void {
+export function registerPlanRoutes(app: FastifyInstance, deps: { planner: Planner; geocoder: Geocoder; now?: () => number }): void {
   app.get<{
-    Querystring: { from?: string; to?: string; fromName?: string; toName?: string; time?: string; arriveBy?: string; stepFree?: string; pace?: string; sort?: string };
+    Querystring: {
+      from?: string;
+      to?: string;
+      fromName?: string;
+      toName?: string;
+      time?: string;
+      arriveBy?: string;
+      stepFree?: string;
+      pace?: string;
+      sort?: string;
+      avoid?: string;
+    };
   }>('/api/plan', async (req, reply) => {
     const q = req.query;
     const from = point(q.from);
@@ -39,6 +50,13 @@ export function registerPlanRoutes(app: FastifyInstance, deps: { planner: Planne
           stepFree: q.stepFree === '1' || q.stepFree === 'true',
           pace: PACES.has(q.pace as WalkPace) ? (q.pace as WalkPace) : 'normal',
           sort: SORTS.has(q.sort as PlanSort) ? (q.sort as PlanSort) : 'fastest',
+          avoidRoutes: q.avoid
+            ? q.avoid
+                .split(',')
+                .map((r) => r.trim())
+                .filter((r) => /^[\w.-]{1,40}$/.test(r))
+                .slice(0, 10)
+            : undefined,
         },
         ac.signal,
       );
@@ -48,5 +66,8 @@ export function registerPlanRoutes(app: FastifyInstance, deps: { planner: Planne
     }
   });
 
-  app.get<{ Querystring: { q?: string; near?: string } }>('/api/geocode', async (req) => deps.geocoder.search(String(req.query.q ?? ''), point(req.query.near)));
+  app.get<{ Querystring: { q?: string; near?: string } }>('/api/geocode', async (req) => ({
+    now: deps.now?.() ?? Date.now(),
+    ...(await deps.geocoder.search(String(req.query.q ?? ''), point(req.query.near))),
+  }));
 }

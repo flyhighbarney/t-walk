@@ -1,0 +1,15 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>T-Walk side by side</title>
+<style>
+body{margin:0;background:#05080f;color:#d9e3fb;font:14px system-ui;}
+.row{display:flex;gap:20px;padding:16px;overflow-x:auto;}
+figure{margin:0;flex:none}
+figcaption{margin:0 0 6px 4px;font-weight:700}
+iframe{width:375px;height:780px;border:1px solid #2b3548;border-radius:24px;background:#091324}
+</style></head><body>
+<div class="row">
+<figure><figcaption>Now</figcaption><iframe src="http://127.0.0.1:8787/"></iframe></figure>
+<figure><figcaption>Map</figcaption><iframe src="http://127.0.0.1:8787/map?stop=place-dwnxg"></iframe></figure>
+<figure><figcaption>Trips</figcaption><iframe src="http://127.0.0.1:8787/trips?from=42.35640,-71.06242&fromName=Park%20Street&to=42.34670,-71.09720&toName=Fenway%20Park"></iframe></figure>
+<figure><figcaption>Saved</figcaption><iframe src="http://127.0.0.1:8787/saved"></iframe></figure>
+</div></body></html>

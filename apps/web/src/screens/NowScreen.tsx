@@ -21,7 +21,9 @@ import { WalkIcon } from '../components/icons.tsx';
 import { fetchNearby, fetchStop } from '../lib/api.ts';
 import { useLiveBoards, useNow } from '../lib/live.ts';
 import { useLocation } from '../lib/location.ts';
-import { useLocationOptIn, usePinnedStops, useWalkPace } from '../lib/storage.ts';
+import { useLocationOptIn, usePinnedStops, useStepFree, useWalkPace } from '../lib/storage.ts';
+import { useStopAlerts } from '../components/Alerts.tsx';
+import { offlineNearby, useKeepOffline, useOfflineBoards, useOnline, usePack } from '../lib/offline.ts';
 
 // Metres per second to mph, for the labels (WALK_SPEED includes waiting at crossings).
 const mph = (pace: WalkPace) => (WALK_SPEED[pace] * 2.23694).toFixed(1);
@@ -135,6 +137,16 @@ export default function NowScreen() {
     };
   }, [nearby, extra]);
   const live = useLiveBoards(liveIds, seed);
+  // Offline: boards (and nearby stops) from the timetable kept on this device.
+  const online = useOnline();
+  const offline = !online || (nearbyError && !nearby);
+  const pack = usePack();
+  useKeepOffline(online ? liveIds : []);
+  const offlineStops = offline && !nearby && lat != null && lon != null ? offlineNearby(pack, lat, lon, pace) : [];
+  const offlineBoards = useOfflineBoards([...liveIds, ...offlineStops.map((s) => s.id)], offline);
+  const boardFor = (id: string) => (offline ? (offlineBoards.get(id) ?? live.boards.get(id)) : (live.boards.get(id) ?? offlineBoards.get(id)));
+  const [stepFree] = useStepFree();
+  const alerts = useStopAlerts(liveIds, stepFree);
   const status = live.status ?? seed?.status ?? null;
 
   const walkTo = (stop: StopSummary): WalkEstimate | null =>
@@ -148,12 +160,14 @@ export default function NowScreen() {
       stop={stop}
       walk={walk}
       entranceName={entranceName}
-      board={live.boards.get(stop.id)}
+      board={boardFor(stop.id)}
       routes={live.routes}
       status={status}
       now={now}
       pinned={pins.includes(stop.id)}
       onTogglePin={togglePin}
+      alerts={alerts.get(stop.id)}
+      stepFree={stepFree}
     />
   );
 
@@ -164,7 +178,7 @@ export default function NowScreen() {
     .filter((id) => !pins.includes(id))
     .map((id) => extra.get(id)?.stop ?? nearby?.stops.find((s) => s.id === id))
     .filter((s): s is StopSummary => s != null);
-  const nearbyStops = (nearby?.stops ?? []).filter((s) => !pins.includes(s.id));
+  const nearbyStops = (nearby?.stops ?? offlineStops).filter((s) => !pins.includes(s.id));
 
   return (
     <>
@@ -172,7 +186,7 @@ export default function NowScreen() {
     <main className="pb-tabbar mx-auto max-w-xl px-4 pt-2">
       <div className="space-y-4">
         <PacePicker pace={pace} onChange={setPace} />
-        <StatusBanner status={status} connection={live.connection} lastMessageAt={live.lastMessageAt} />
+        <StatusBanner status={status} connection={live.connection} lastMessageAt={live.lastMessageAt} offline={offline ? { savedAt: pack?.generatedAt ?? null } : null} />
 
         {!optIn ? <LocationIntro onAllow={() => setOptIn(true)} /> : null}
         {location.kind === 'denied' ? (
@@ -200,7 +214,7 @@ export default function NowScreen() {
         ) : null}
 
         {optIn && location.kind === 'locating' && !nearby ? <p className="text-muted">Finding your location…</p> : null}
-        {nearbyError ? <p className="text-miss-fg text-sm">Couldn't load nearby stops. Check your connection; T-Walk will keep trying.</p> : null}
+        {nearbyError && !offline ? <p className="text-miss-fg text-sm">Couldn't load nearby stops. Check your connection; T-Walk will keep trying.</p> : null}
 
         {nearbyStops.length > 0 ? (
           <section aria-labelledby="near-h" className="space-y-3">

@@ -47,6 +47,8 @@ export default defineConfig({
           },
         ],
         navigateFallback: '/index.html',
+        // Push messages for leave-now notifications (public/push-sw.js).
+        importScripts: ['/push-sw.js'],
         navigateFallbackDenylist: [/^\/api\//],
       },
     }),

@@ -5,7 +5,18 @@ import { formatAge, type LiveStatus } from '@twalk/core';
 import type { Connection } from '../lib/live.ts';
 import { WarnIcon } from './icons.tsx';
 
-export function StatusBanner({ status, connection, lastMessageAt }: { status: LiveStatus | null; connection: Connection; lastMessageAt: number | null }) {
+export function StatusBanner({
+  status,
+  connection,
+  lastMessageAt,
+  offline,
+}: {
+  status: LiveStatus | null;
+  connection: Connection;
+  lastMessageAt: number | null;
+  /** Boards are coming from the timetable kept on this device, saved at this time. */
+  offline?: { savedAt: number | null } | null;
+}) {
   let tone: 'down' | 'warn' | null = null;
   let message = '';
 
@@ -14,7 +25,12 @@ export function StatusBanner({ status, connection, lastMessageAt }: { status: Li
   const someDown = preds.some((h) => h.state === 'down');
   const backup = preds.find((h) => h.detail?.includes('backup'));
 
-  if (connection === 'lost') {
+  if (offline) {
+    tone = 'warn';
+    message = offline.savedAt
+      ? `You're offline. Showing the timetable saved at ${new Date(offline.savedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}: scheduled times, not live.`
+      : "You're offline, and no timetable is saved on this device yet. Open T-Walk once with a connection.";
+  } else if (connection === 'lost') {
     tone = 'warn';
     const age = lastMessageAt ? (Date.now() - lastMessageAt) / 1000 : null;
     message = `No connection to T-Walk. Times may be out of date${age != null ? ` (${formatAge(age)})` : ''}. Reconnecting…`;

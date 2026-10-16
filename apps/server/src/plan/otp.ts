@@ -102,6 +102,8 @@ export interface PlanQuery {
   /** 'fastest' uses OTP's defaults; the others tilt its costs; 'walk-only' asks for a walking route alone. */
   flavor: 'fastest' | 'least-walking' | 'fewest-transfers' | 'walk-only';
   first?: number;
+  /** Lines to stay off (GTFS route ids, no feed prefix): backup plans around a disruption. */
+  avoidRoutes?: string[];
 }
 
 export function planVariables(q: PlanQuery) {
@@ -124,7 +126,10 @@ export function planVariables(q: PlanQuery) {
     preferences: {
       accessibility: { wheelchair: { enabled: q.stepFree } },
       street,
-      transit: { transfer: { cost: q.flavor === 'fewest-transfers' ? 1200 : 60, slack: 'PT1M' } },
+      transit: {
+        transfer: { cost: q.flavor === 'fewest-transfers' ? 1200 : 60, slack: 'PT1M' },
+        ...(q.avoidRoutes?.length ? { filters: [{ exclude: [{ routes: q.avoidRoutes.map((r) => `mbta:${r}`) }] }] } : {}),
+      },
     },
     first: q.first ?? 5,
   };

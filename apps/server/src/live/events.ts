@@ -9,7 +9,8 @@ export type StreamName =
   | 'vehicles'
   | 'alerts'
   | 'gtfsrt-trip-updates'
-  | 'gtfsrt-vehicles';
+  | 'gtfsrt-vehicles'
+  | 'gtfsrt-alerts';
 
 export type UpstreamEvent =
   /** Connection established (SSE) or first successful poll. */

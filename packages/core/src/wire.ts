@@ -167,3 +167,15 @@ export interface BikesResponse {
   updatedAt: number | null;
   stations: BikeStation[];
 }
+
+// ── Offline (Phase 4) ──────────────────────────────────────────────────────
+
+/** A day of timetable for a few stops, kept on the device for when there's no signal. */
+export interface OfflinePack {
+  generatedAt: number;
+  until: number;
+  feedVersion: string | null;
+  stops: (StopSummary & { platforms: string[] })[];
+  routes: RouteInfo[];
+  schedules: Record<string, import('./model.ts').ScheduledStopTime[]>;
+}

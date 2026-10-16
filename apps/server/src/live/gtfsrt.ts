@@ -5,7 +5,7 @@
 // Field names checked against the live feed on 2026-10-15. The feed header's
 // timestamp is when the MBTA produced the data, which is the honest data age.
 
-import type { Prediction, Vehicle, VehicleStatus } from '@twalk/core';
+import type { Alert, AlertEntity, Prediction, Vehicle, VehicleStatus } from '@twalk/core';
 import type { Clock } from './clock.ts';
 import type { EventSink, StreamName } from './events.ts';
 import { normalizeRelationship } from './v3.ts';
@@ -13,6 +13,8 @@ import { normalizeRelationship } from './v3.ts';
 export const GTFSRT_URLS: Partial<Record<StreamName, string>> = {
   'gtfsrt-trip-updates': 'https://cdn.mbta.com/realtime/TripUpdates_enhanced.json',
   'gtfsrt-vehicles': 'https://cdn.mbta.com/realtime/VehiclePositions_enhanced.json',
+  // Public, no key: every alert, including elevator and escalator closures with their facility.
+  'gtfsrt-alerts': 'https://cdn.mbta.com/realtime/Alerts_enhanced.json',
 };
 
 interface Feed<E> {
@@ -140,6 +142,71 @@ export function vehiclesFromFeed(text: string): Vehicle[] {
       })),
       updatedAt: v.timestamp ? v.timestamp * 1000 : 0,
       revenue: v.trip?.revenue !== false,
+    });
+  }
+  return out;
+}
+
+interface Translated {
+  translation?: { text: string; language?: string }[];
+}
+const en = (t: Translated | undefined): string | null =>
+  t?.translation?.find((x) => !x.language || x.language === 'en')?.text ?? t?.translation?.[0]?.text ?? null;
+
+interface AlertEntityRaw {
+  id: string;
+  alert?: {
+    cause?: string;
+    cause_detail?: string;
+    effect?: string;
+    effect_detail?: string;
+    severity?: number;
+    active_period?: { start?: number; end?: number }[];
+    informed_entity?: { stop_id?: string; route_id?: string; route_type?: number; direction_id?: number; trip?: { trip_id?: string }; facility_id?: string; activities?: string[] }[];
+    header_text?: Translated;
+    description_text?: Translated;
+    timeframe_text?: Translated;
+    alert_lifecycle?: string;
+    url?: string | Translated;
+    last_modified_timestamp?: number;
+  };
+}
+
+/**
+ * The enhanced feed's `effect_detail` (ELEVATOR_CLOSURE, SHUTTLE, SUSPENSION…)
+ * uses the same names as the V3 API's `effect`; plain `effect` is the coarse
+ * GTFS-realtime value (ACCESSIBILITY_ISSUE, NO_SERVICE…).
+ */
+export function alertsFromFeed(text: string): Alert[] {
+  const feed = JSON.parse(text) as { entity?: AlertEntityRaw[] };
+  const out: Alert[] = [];
+  for (const e of feed.entity ?? []) {
+    const a = e.alert;
+    const header = a ? en(a.header_text) : null;
+    if (!a || !header) continue;
+    out.push({
+      id: e.id,
+      effect: a.effect_detail ?? a.effect ?? 'UNKNOWN_EFFECT',
+      cause: a.cause_detail ?? a.cause ?? 'UNKNOWN_CAUSE',
+      header,
+      description: en(a.description_text),
+      severity: a.severity ?? 0,
+      lifecycle: a.alert_lifecycle ?? 'NEW',
+      timeframe: en(a.timeframe_text),
+      activePeriods: (a.active_period ?? []).map((p) => ({ start: (p.start ?? 0) * 1000, end: p.end ? p.end * 1000 : null })),
+      entities: (a.informed_entity ?? []).map(
+        (x): AlertEntity => ({
+          route: x.route_id,
+          routeType: x.route_type,
+          directionId: x.direction_id,
+          stop: x.stop_id,
+          trip: x.trip?.trip_id,
+          facility: x.facility_id,
+          activities: x.activities ?? [],
+        }),
+      ),
+      url: typeof a.url === 'string' ? a.url : en(a.url),
+      updatedAt: (a.last_modified_timestamp ?? 0) * 1000,
     });
   }
   return out;

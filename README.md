@@ -10,6 +10,9 @@ stop, and a live map of every train, bus and boat around you.
 - **Phase 3:** the door-to-door trip planner (`/trips`) on OpenTripPlanner 2.10,
   with live data, four ways to sort, step-free mode, transfer risk, fares and
   "What if I miss it?".
+- **Phase 4:** saved commutes with "Leave by", leave-now push notifications,
+  backup plans around disruptions, alerts for your stops and lines, and offline
+  mode.
 
 Accuracy rules:
 
@@ -156,6 +159,26 @@ node tools/fake-otp.ts 8792
 
 Then start the server with `OTP_URL=http://127.0.0.1:8792` and `PHOTON_URL=http://127.0.0.1:8792/api/`.
 
+## Commutes, notifications, alerts, offline
+
+- **Alerts** come from the MBTA's public feed (`cdn.mbta.com/realtime/Alerts_enhanced.json`, no key needed), or from the V3 stream when there's a key.
+  - A stop shows its own alerts and whole-line alerts for its lines; a trip or commute shows alerts for its lines and the stops it uses (`packages/core/src/alerts.ts`).
+  - Elevator outages show only in step-free mode, where they're highlighted.
+  - Planned work shows up to a week ahead ("From 8:00 PM tomorrow to 4:00 PM Monday").
+  - Three are shown, the rest behind "N more".
+- **Commutes** (Saved tab) are stored on the device: from, to, arrive-by or leave-at time, days, step-free. From 3 hours before, the card shows today's plan with "Leave by", its route, transfer risk and alerts.
+- **Leave-now notifications** (`apps/server/src/push/`) are opt-in per commute.
+  - Turning them on sends that commute and the device's push address to the server (`data/push.sqlite`); turning them off deletes them there.
+  - From 90 minutes before, the server re-plans every 2 minutes with live data and the NWS hourly forecast (2 min extra in rain, 4 in snow), and sends "Leave in 4 min to catch the 8:24 AM Orange Line" 5 minutes before you need to leave.
+  - It sends again only if the time moves by 3 minutes or more.
+  - If a suspension, shuttle, closure or detour hits a line the commute uses, it plans around that line (OTP's `transit.filters.exclude`) and sends the backup once, up to 75 minutes ahead.
+  - Needs VAPID keys: `npm run push:keys` adds them to `.env`.
+  - On iPhone and iPad, web push only works once T-Walk is on the Home Screen (iOS 16.4+).
+- **Offline:**
+  - While online, the app keeps the next 24 h of timetable for your saved stops and the stops near you in IndexedDB (`/api/offline/pack`, refreshed every 3 h).
+  - Offline, Now and Saved build boards from it with the same rules as the server, labelled Scheduled, with a banner giving when it was saved.
+  - The last known difference between the device and server clocks is kept, so times stay right offline too.
+
 ## How live data flows
 
 ```
@@ -187,9 +210,9 @@ cdn.mbta.com ─poll─┘  GTFS-realtime: no-key mode, and fallback when a V3 s
 ## Tests
 
 ```bash
-npm test                    # Vitest: core, motion, trips, fares, adapters, replay, API, map, planner (132 tests)
+npm test                    # Vitest: core, motion, trips, fares, alerts, commutes, adapters, replay, API, map, planner, push (158 tests)
 npm run smoke:plan          # real trips through a running server and OTP
-npm run test:e2e            # builds, then Playwright with replay servers and a stand-in OTP (15 tests, axe on Now, Map, Trips)
+npm run test:e2e            # builds, then Playwright with replay servers and a stand-in OTP (18 tests: offline, commutes, alerts, axe on Now, Map, Trips)
 npm run lighthouse          # builds, then a mobile Lighthouse run of Now on the replay
 npm run lighthouse -- map   # the same for the Map screen
 npm run typecheck && npm run lint
@@ -232,7 +255,7 @@ GTFS_DIR=fixtures/gtfs DATA_DIR=data-fixture REPLAY_FILE=fixtures/replay/normal.
 
 | Screen | Performance | Accessibility | Best practices |
 |---|---|---|---|
-| Now (landing) | 97 (FCP 1.7 s, LCP 1.9 s) | 100 | 100 |
+| Now (landing) | 99 (FCP 1.6 s, LCP 1.9 s) | 100 | 100 |
 | Map | 51 (TBT 5.8 s) | 100 | 100 |
 
 The Map's score is MapLibre starting its WebGL engine and decoding vector tiles
@@ -245,7 +268,8 @@ on Lighthouse's 4× slowed CPU. Ways to bring it up are listed under known gaps.
   fewer basemap layers; raster tiles at low zoom.
 - **Shuttles and diversions** are drawn only as their buses (shuttle routes are
   in the feed). Outlining a diversion from its alert needs alerts, so an API key.
-- **Alerts and elevator status** need `MBTA_API_KEY` (the V3 stream).
+- **Push notifications haven't been tested on a real phone yet**, only through the server's own tests. Headless browsers can't subscribe to a push service.
+- **Personal commute stats** (average time, on-time rate) need records of trips actually taken: Phase 5 (trip companion).
 - **The V3 streaming path is untested against live data** until a key is set;
   the GTFS-realtime path is what ran on live data.
 - **Walking times on Now and the map are still straight-line × 1.3** (labelled "about"). The trip planner's walks use real streets.

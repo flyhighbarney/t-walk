@@ -20,7 +20,7 @@ const FALLBACK_RELEASE_MS = 60_000;
 
 export class LiveManager {
   private readonly sse: SseStream[] = [];
-  private readonly pollers: Record<'gtfsrt-trip-updates' | 'gtfsrt-vehicles', FeedPoller>;
+  private readonly pollers: Record<'gtfsrt-trip-updates' | 'gtfsrt-vehicles' | 'gtfsrt-alerts', FeedPoller>;
   private timer: NodeJS.Timeout | null = null;
   private readonly startedAt: number;
   private healthySince: number | null = null;
@@ -42,17 +42,23 @@ export class LiveManager {
       opts.recorder?.write(e);
       opts.ingest.handle(e);
     };
-    const poller = (stream: 'gtfsrt-trip-updates' | 'gtfsrt-vehicles') =>
-      new FeedPoller({ stream, sink: this.sink, clock: opts.clock, userAgent: opts.userAgent });
-    this.pollers = { 'gtfsrt-trip-updates': poller('gtfsrt-trip-updates'), 'gtfsrt-vehicles': poller('gtfsrt-vehicles') };
+    const poller = (stream: 'gtfsrt-trip-updates' | 'gtfsrt-vehicles' | 'gtfsrt-alerts', intervalMs?: number) =>
+      new FeedPoller({ stream, sink: this.sink, clock: opts.clock, userAgent: opts.userAgent, intervalMs });
+    this.pollers = {
+      'gtfsrt-trip-updates': poller('gtfsrt-trip-updates'),
+      'gtfsrt-vehicles': poller('gtfsrt-vehicles'),
+      // Alerts change slowly; once every 30 s is plenty.
+      'gtfsrt-alerts': poller('gtfsrt-alerts', 30_000),
+    };
   }
 
   start(): void {
     const { apiKey, clock, userAgent, log } = this.opts;
     if (!apiKey) {
-      log('No MBTA_API_KEY: using the public GTFS-realtime feeds only (no streaming, no alerts).');
+      log('No MBTA_API_KEY: using the public GTFS-realtime feeds only (polled, no streaming).');
       this.pollers['gtfsrt-trip-updates'].start();
       this.pollers['gtfsrt-vehicles'].start();
+      this.pollers['gtfsrt-alerts'].start();
       return;
     }
     for (const spec of v3StreamSpecs(this.opts.routesByType)) {
@@ -77,13 +83,15 @@ export class LiveManager {
     const need = (streams: StreamName[]) => streams.some((s) => ingest.unsyncedFor(s, FALLBACK_AFTER_MS, this.startedAt));
     const predNeeded = need(['predictions-rail', 'predictions-bus']);
     const vehNeeded = need(['vehicles']);
-    const allSynced = ['predictions-rail', 'predictions-bus', 'vehicles'].every((s) => ingest.v3Synced(s as StreamName));
+    const alertsNeeded = need(['alerts']);
+    const allSynced = ['predictions-rail', 'predictions-bus', 'vehicles', 'alerts'].every((s) => ingest.v3Synced(s as StreamName));
     this.healthySince = allSynced ? (this.healthySince ?? clock.now()) : null;
     const release = this.healthySince != null && clock.now() - this.healthySince >= FALLBACK_RELEASE_MS;
 
     for (const [stream, needed] of [
       ['gtfsrt-trip-updates', predNeeded],
       ['gtfsrt-vehicles', vehNeeded],
+      ['gtfsrt-alerts', alertsNeeded],
     ] as const) {
       const p = this.pollers[stream];
       if (needed && !p.running) {

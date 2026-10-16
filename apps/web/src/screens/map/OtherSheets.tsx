@@ -19,7 +19,8 @@ import { StopCard } from '../../components/StopCard.tsx';
 import { chipColors } from '../../components/RouteChip.tsx';
 import { fetchStop } from '../../lib/api.ts';
 import { useLiveBoards, useNow } from '../../lib/live.ts';
-import type { MapLayers } from '../../lib/storage.ts';
+import { useStepFree, type MapLayers } from '../../lib/storage.ts';
+import { useStopAlerts } from '../../components/Alerts.tsx';
 import { BottomSheet } from './BottomSheet.tsx';
 import { BIKE_COLOR } from './mapStyle.ts';
 import { CrowdingDots, occupancyInfo } from './VehicleSheet.tsx';
@@ -52,6 +53,8 @@ export function StopSheet(props: {
   const seed = useMemo(() => (data ? { boards: [data.board], routes: data.routes, status: data.status } : undefined), [data]);
   const ids = useMemo(() => (data ? [data.stop.id] : []), [data]);
   const live = useLiveBoards(ids, seed);
+  const [stepFree] = useStepFree();
+  const alerts = useStopAlerts(ids, stepFree);
   const stop = data?.stop;
   const walk =
     stop && props.here
@@ -95,6 +98,8 @@ export function StopSheet(props: {
               showMapLink={false}
               routeFilter={filter}
               hideName
+              alerts={stop ? alerts.get(stop.id) : undefined}
+              stepFree={stepFree}
             />
           </div>
         </>

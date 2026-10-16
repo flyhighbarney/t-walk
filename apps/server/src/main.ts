@@ -15,6 +15,11 @@ import { Recorder } from './live/recorder.ts';
 import { BikesFeed } from './live/bikes.ts';
 import { Planner } from './plan/planner.ts';
 import { Geocoder } from './plan/geocode.ts';
+import { PushStore } from './push/store.ts';
+import { CommuteNotifier } from './push/notifier.ts';
+import { WebPushSender } from './push/routes.ts';
+import { Weather } from './push/weather.ts';
+import { mkdirSync } from 'node:fs';
 import { loadRecording, ReplayDriver } from './live/replay.ts';
 import { LiveStore } from './live/store.ts';
 
@@ -81,7 +86,29 @@ const boards = new Boards({ getDb: () => db, store, ingest, clock });
 const fareRules = JSON.parse(readFileSync(join(REPO_ROOT, 'config', 'fares.json'), 'utf8')) as FareRules;
 const planner = new Planner({ otpUrl: config.otpUrl, getDb: () => db, store, ingest, clock, fareRules });
 const geocoder = new Geocoder({ userAgent: config.userAgent, getDb: () => db, baseUrl: config.photonUrl });
-const app = await buildApp({ getDb: () => db, boards, store, bikes, planner, geocoder, clock, webDist: config.webDist, logger: false });
+// Leave-now notifications: only with VAPID keys (npm run push:keys) and not in replay mode.
+let push: { store: PushStore; sender: WebPushSender; publicKey: string } | null = null;
+if (config.vapid && !replayEvents) {
+  mkdirSync(config.dataDir, { recursive: true });
+  const pushStore = new PushStore(join(config.dataDir, 'push.sqlite'));
+  const sender = new WebPushSender(config.vapid);
+  const weather = new Weather({ userAgent: config.userAgent });
+  new CommuteNotifier({
+    store: pushStore,
+    plan: (req) => planner.plan(req),
+    alerts: () => [...store.alerts.items.values()],
+    weather: (lat, lon, at) => weather.at(lat, lon, at),
+    clock,
+    sender,
+    log,
+  }).start();
+  push = { store: pushStore, sender, publicKey: config.vapid.publicKey };
+  log(`Leave-now notifications on (${pushStore.all().length} commutes)`);
+} else if (!config.vapid) {
+  log('No VAPID keys: leave-now notifications are off (npm run push:keys to turn them on).');
+}
+
+const app = await buildApp({ getDb: () => db, boards, store, bikes, planner, geocoder, ingest, push, clock, webDist: config.webDist, logger: false });
 await app.listen({ port: config.port, host: config.host });
 log(`Listening on http://${config.host}:${config.port}`);
 

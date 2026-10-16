@@ -26,7 +26,8 @@
     "otp:fetch": "node tools/otp.ts fetch",
     "otp:build": "node tools/otp.ts build",
     "otp:serve": "node tools/otp.ts serve",
-    "smoke:plan": "node tools/smoke-plan.ts"
+    "smoke:plan": "node tools/smoke-plan.ts",
+    "push:keys": "node tools/push-keys.ts"
   },
   "engines": {
     "node": ">=24"

@@ -3,7 +3,7 @@
 // guarded and the app works without it.
 
 import { useCallback, useSyncExternalStore } from 'react';
-import type { WalkPace } from '@twalk/core';
+import type { Commute, WalkPace } from '@twalk/core';
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -96,4 +96,28 @@ export function useMapLayers(): [MapLayers, (l: MapLayers) => void] {
   const [stored, set] = useStored<MapLayers>('twalk.map.layers.v1', DEFAULT_LAYERS);
   // Older saved values may miss newer keys.
   return [{ ...DEFAULT_LAYERS, ...stored, modes: { ...DEFAULT_LAYERS.modes, ...stored.modes } }, set];
+}
+
+/** Saved commutes (on this device), and the server id of each one with notifications on. */
+export function useCommutes(): {
+  commutes: Commute[];
+  save: (c: Commute) => void;
+  remove: (id: string) => void;
+  serverIds: Record<string, string>;
+  setServerId: (id: string, serverId: string | null) => void;
+} {
+  const [commutes, setCommutes] = useStored<Commute[]>('twalk.commutes.v1', []);
+  const [serverIds, setServerIds] = useStored<Record<string, string>>('twalk.commutes.push.v1', {});
+  return {
+    commutes,
+    save: (c) => setCommutes(commutes.some((x) => x.id === c.id) ? commutes.map((x) => (x.id === c.id ? c : x)) : [...commutes, c]),
+    remove: (id) => setCommutes(commutes.filter((c) => c.id !== id)),
+    serverIds,
+    setServerId: (id, serverId) => {
+      const next = { ...serverIds };
+      if (serverId) next[id] = serverId;
+      else delete next[id];
+      setServerIds(next);
+    },
+  };
 }

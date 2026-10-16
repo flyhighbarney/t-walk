@@ -12,7 +12,7 @@
 import { DOWN_AFTER_SECONDS, type FeedHealth, type FeedState, type Mode, type Prediction } from '@twalk/core';
 import type { Clock } from './clock.ts';
 import type { StreamName, UpstreamEvent } from './events.ts';
-import { feedTimestamp, predictionsFromTripUpdates, vehiclesFromFeed } from './gtfsrt.ts';
+import { alertsFromFeed, feedTimestamp, predictionsFromTripUpdates, vehiclesFromFeed } from './gtfsrt.ts';
 import type { LiveStore } from './store.ts';
 import { alertFromV3, predictionFromV3, vehicleFromV3, type V3Resource } from './v3.ts';
 
@@ -174,6 +174,13 @@ export class Ingest {
         this.store.predictions.clearOwner(v3);
         this.store.predictions.reset(`gtfsrt:${group}`, byGroup[group]);
       }
+    } else if (stream === 'gtfsrt-alerts') {
+      if (this.v3Synced('alerts')) {
+        this.store.alerts.clearOwner('gtfsrt');
+        return;
+      }
+      this.store.alerts.clearOwner('alerts');
+      this.store.alerts.reset('gtfsrt', alertsFromFeed(data));
     } else if (stream === 'gtfsrt-vehicles') {
       if (this.v3Synced('vehicles')) {
         this.store.vehicles.clearOwner('gtfsrt');
@@ -235,7 +242,7 @@ export class Ingest {
   }
 
   alertHealth(): FeedHealth {
-    return this.v3Health('alerts', true) ?? { source: 'none', state: 'down', lastUpdateAt: null, detail: 'Alerts need an MBTA API key' };
+    return this.pick(this.v3Health('alerts', true), this.feedHealth('gtfsrt-alerts'), 'alerts');
   }
 
   /** For the manager: has this V3 stream been unusable for at least `ms`? */

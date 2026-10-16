@@ -182,12 +182,33 @@ function heartbeat(sc: Scenario, from: number, to: number, data: { rail: P[]; bu
   }
 }
 
-function resetAll(sc: Scenario, t: number, data: { rail: P[]; bus: P[]; vehicles: V[] }) {
+/** Two alerts in the V3 shape: a Red Line delay, and an elevator out at Park Street (step-free riders only). */
+function v3Alerts(t: number) {
+  const base = (id: string, attrs: Record<string, unknown>) => ({ id, type: 'alert', attributes: { cause: 'UNKNOWN_CAUSE', lifecycle: 'NEW', description: null, url: null, timeframe: null, updated_at: iso(t), ...attrs } });
+  return [
+    base('fx-delay', {
+      effect: 'DELAY',
+      severity: 5,
+      header: 'Red Line: delays of about 10 minutes due to a disabled train at JFK/UMass.',
+      active_period: [{ start: iso(t - 30 * MIN), end: iso(t + 2 * 60 * MIN) }],
+      informed_entity: [{ route: 'Red', route_type: 1, activities: ['BOARD', 'EXIT', 'RIDE'] }],
+    }),
+    base('fx-elevator', {
+      effect: 'ELEVATOR_CLOSURE',
+      severity: 3,
+      header: 'Park Street Elevator 804 (Red Line platform to lobby) is unavailable. Use Downtown Crossing for step-free access.',
+      active_period: [{ start: iso(t - 24 * 60 * MIN), end: null }],
+      informed_entity: [{ stop: 'place-pktrm', facility: '804', activities: ['USING_WHEELCHAIR'] }],
+    }),
+  ];
+}
+
+function resetAll(sc: Scenario, t: number, data: { rail: P[]; bus: P[]; vehicles: V[] }, opts: { alerts?: boolean } = {}) {
   sc.open(t, ...V3);
   sc.msg(t + 200, 'predictions-rail', 'reset', data.rail.map(v3Pred));
   sc.msg(t + 300, 'predictions-bus', 'reset', data.bus.map(v3Pred));
   sc.msg(t + 400, 'vehicles', 'reset', data.vehicles.map(v3Vehicle));
-  sc.msg(t + 500, 'alerts', 'reset', []);
+  sc.msg(t + 500, 'alerts', 'reset', opts.alerts ? v3Alerts(t) : []);
 }
 
 mkdirSync(OUT, { recursive: true });
@@ -196,7 +217,7 @@ const T0 = Date.parse('2026-10-15T08:00:00-04:00');
 {
   const sc = new Scenario();
   const d = morning(T0);
-  resetAll(sc, T0 - 5 * S, d);
+  resetAll(sc, T0 - 5 * S, d, { alerts: true });
   heartbeat(sc, T0 + 10 * S, T0 + 5 * MIN, d);
   // A prediction removed mid-stream (the train left), and one added.
   sc.msg(T0 + 50 * S, 'predictions-rail', 'remove', { id: predId(d.rail[0]!), type: 'prediction' });

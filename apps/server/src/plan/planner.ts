@@ -48,6 +48,7 @@ export interface PlanRequest {
   stepFree: boolean;
   pace: WalkPace;
   sort: PlanSort;
+  avoidRoutes?: string[];
 }
 
 /** Walking the whole way is offered when it's no more than this much slower than riding. */
@@ -120,6 +121,7 @@ export class Planner {
       arriveBy: req.arriveBy,
       stepFree: req.stepFree,
       walkSpeed: WALK_SPEED[req.pace],
+      avoidRoutes: req.avoidRoutes,
     };
     const flavors: PlanQuery['flavor'][] = ['fastest', 'least-walking', 'fewest-transfers'];
     const results = await Promise.allSettled(flavors.map((flavor) => this.query(this.otpUrl, { ...base, flavor }, signal)));

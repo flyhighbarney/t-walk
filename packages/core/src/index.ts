@@ -10,3 +10,5 @@ export * from './geo.ts';
 export * from './motion.ts';
 export * from './trip.ts';
 export * from './fares.ts';
+export * from './alerts.ts';
+export * from './commute.ts';

@@ -22,6 +22,8 @@ export interface Config {
   otpUrl: string;
   /** Photon's search endpoint (a stand-in in tests). */
   photonUrl: string;
+  /** Web push signing keys (npm run push:keys); push is off without them. */
+  vapid: { publicKey: string; privateKey: string; subject: string } | null;
 }
 
 const fromRoot = (p: string) => resolve(REPO_ROOT, p);
@@ -42,5 +44,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     webDist: fromRoot(env.WEB_DIST ?? 'apps/web/dist'),
     otpUrl: (env.OTP_URL ?? 'http://127.0.0.1:8080').replace(/\/+$/, ''),
     photonUrl: env.PHOTON_URL ?? 'https://photon.komoot.io/api/',
+    vapid:
+      env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
+        ? {
+            publicKey: env.VAPID_PUBLIC_KEY,
+            privateKey: env.VAPID_PRIVATE_KEY,
+            // Push services want a way to reach whoever runs the server.
+            subject: /[\w.+-]+@[\w-]+\.[\w.]+/.test(env.CONTACT ?? '') ? `mailto:${/[\w.+-]+@[\w-]+\.[\w.]+/.exec(env.CONTACT!)![0]}` : 'mailto:t-walk@example.invalid',
+          }
+        : null,
   };
 }

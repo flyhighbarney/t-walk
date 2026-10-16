@@ -23,7 +23,15 @@ export function usePageVisible(): boolean {
 }
 
 /** Server time minus this device's time, smoothed. */
-let serverOffset = 0;
+const OFFSET_KEY = 'twalk.clock.offset.v1';
+/** The last known difference is kept, so offline (nothing to ask) still uses the server's clock. */
+let serverOffset = (() => {
+  try {
+    return Number(localStorage.getItem(OFFSET_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+})();
 let haveOffset = false;
 const offsetListeners = new Set<() => void>();
 export function noteServerTime(serverNow: number): void {
@@ -33,6 +41,11 @@ export function noteServerTime(serverNow: number): void {
   const jump = !haveOffset || Math.abs(sample - serverOffset) > 5_000;
   serverOffset = jump ? sample : serverOffset * 0.7 + sample * 0.3;
   haveOffset = true;
+  try {
+    localStorage.setItem(OFFSET_KEY, String(Math.round(serverOffset)));
+  } catch {
+    // Not kept; fine.
+  }
   if (jump) for (const l of offsetListeners) l();
 }
 export const serverNow = () => Date.now() + serverOffset;

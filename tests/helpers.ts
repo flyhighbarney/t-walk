@@ -39,7 +39,7 @@ export async function stack(opts: { scenario?: string; start: number }) {
   });
   const driver = opts.scenario ? new ReplayDriver(loadRecording(join(ROOT, 'fixtures/replay', `${opts.scenario}.ndjson`)), ingest) : null;
   const boards = new Boards({ getDb: () => db, store, ingest, clock });
-  const app = await buildApp({ getDb: () => db, boards, store, clock });
+  const app = await buildApp({ getDb: () => db, boards, store, ingest, clock });
   /** Move the clock and apply everything recorded up to then. */
   const at = (t: number) => {
     clock.set(t);
