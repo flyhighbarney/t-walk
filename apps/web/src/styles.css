@@ -68,6 +68,7 @@
 }
 
 @theme inline {
+  --font-sans: 'Roboto Variable', Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -96,7 +97,7 @@
 html {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Roboto Variable', Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-text-size-adjust: 100%;
 }
 

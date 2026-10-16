@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { AlertView, OfflinePack } from '@twalk/core';
-import { alertsFromFeed } from '../apps/server/src/live/gtfsrt.ts';
+import { alertsFromFeed, feedTimestamp } from '../apps/server/src/live/gtfsrt.ts';
 import { stack } from './helpers.ts';
 
 const T0 = Date.parse('2026-10-15T08:00:00-04:00');
@@ -24,6 +24,17 @@ describe('/api/alerts', () => {
     const s = await stack({ scenario: 'normal', start: T0 });
     const r = (await s.app.inject({ url: '/api/alerts?trip=1&stops=B1&routes=Red,1' })).json() as { alerts: AlertView[] };
     expect(r.alerts.map((a) => a.id)).toEqual(['fx-delay']);
+  });
+});
+
+describe('feed timestamp', () => {
+  it("reads the header's, wherever the header is", () => {
+    const vehicle = { id: 'y1', vehicle: { timestamp: 1792132571, position: { latitude: 42.2, longitude: -71.06 } } };
+    // VehiclePositions_enhanced.json, as served 2026-10-16: entities first, header last.
+    expect(feedTimestamp(JSON.stringify({ entity: [vehicle], header: { gtfs_realtime_version: '2.0', timestamp: 1792132835 } }))).toBe(1792132835000);
+    expect(feedTimestamp(JSON.stringify({ header: { timestamp: 1792132835 }, entity: [vehicle] }))).toBe(1792132835000);
+    const many = { entity: Array.from({ length: 50 }, () => vehicle), header: { timestamp: 1792132835 }, extra: 'x'.repeat(500) };
+    expect(feedTimestamp(JSON.stringify(many))).toBe(1792132835000);
   });
 });
 

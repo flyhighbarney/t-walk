@@ -1,6 +1,7 @@
 // The live map. Layout follows the Stitch "Map" design: search and live status
 // on top, mode chips, map controls on the right, the nearest station docked at
-// the bottom, sheets for vehicles, stops, Bluebikes and layers.
+// the bottom, sheets for vehicles, stops, Bluebikes and layers. The open sheet
+// is in the URL (?stop=, ?vehicle=, ?bike=, ?sheet=), so Back closes it.
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -57,6 +58,27 @@ const MODE_CHIPS: { key: keyof MapLayers['modes']; label: string; Icon: typeof T
   { key: 'ferry', label: 'Ferry', Icon: FerryIcon },
 ];
 
+function sheetFrom(path: string): Sheet {
+  for (const kind of ['vehicle', 'stop', 'bike'] as const) {
+    const id = searchParam(path, kind);
+    if (id) return { kind, id };
+  }
+  const s = searchParam(path, 'sheet');
+  return s === 'layers' || s === 'list' ? { kind: s } : null;
+}
+
+/** Each sheet is a history step (marked, so closing one goes back only over our own steps). */
+function openSheet(s: Sheet): void {
+  if (!s) return closeSheetStep();
+  const path = s.kind === 'layers' || s.kind === 'list' ? `/map?sheet=${s.kind}` : `/map?${s.kind}=${encodeURIComponent(s.id)}`;
+  navigate(path, { state: { mapSheet: true } });
+}
+
+function closeSheetStep(): void {
+  if ((history.state as { mapSheet?: boolean } | null)?.mapSheet) history.back();
+  else navigate('/map', { replace: true });
+}
+
 function modesFor(layers: MapLayers, zoom: number): Mode[] {
   const m: Mode[] = [];
   if (layers.modes.subway) m.push('heavy_rail', 'light_rail');
@@ -83,7 +105,8 @@ export default function MapScreen({ path }: { path: string }) {
   const youMarker = useRef<Marker | null>(null);
   const [ready, setReady] = useState(false);
   const [view, setView] = useState<{ bbox: Bbox; zoom: number; center: { lat: number; lon: number } } | null>(null);
-  const [sheet, setSheet] = useState<Sheet>(null);
+  const sheet = useMemo(() => sheetFrom(path), [path]);
+  const setSheet = openSheet;
   const [layers, setLayers] = useMapLayers();
   const [pins, togglePin] = usePinnedStops();
   const [pace] = useWalkPace();
@@ -168,6 +191,9 @@ export default function MapScreen({ path }: { path: string }) {
       map.addLayer({ id: 'station-ring2', type: 'circle', source: 'stations', filter: ['has', 'color2'], minzoom: 12.5, paint: { 'circle-color': c.stationFill, 'circle-radius': ['interpolate', ['linear'], ['zoom'], 12.5, 3, 14, 4.2, 17, 7], 'circle-stroke-color': ['concat', '#', ['get', 'color2']], 'circle-stroke-width': 2 } });
       map.addLayer({ id: 'station-dot', type: 'circle', source: 'stations', minzoom: 12, paint: { 'circle-color': '#ffffff', 'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 1.2, 17, 3] } });
       map.addLayer({ id: 'station-label', type: 'symbol', source: 'stations', minzoom: 13.5, layout: { 'text-field': ['get', 'name'], 'text-size': 12, 'text-anchor': 'left', 'text-offset': [1, 0], 'text-font': ['Noto Sans Bold'], 'text-optional': true }, paint: { 'text-color': c.label, 'text-halo-color': c.halo, 'text-halo-width': 1.6 } });
+      // Invisible, finger-sized targets over the small station and stop circles.
+      map.addLayer({ id: 'station-hit', type: 'circle', source: 'stations', paint: { 'circle-radius': 22, 'circle-color': '#000000', 'circle-opacity': 0 } });
+      map.addLayer({ id: 'bus-stop-hit', type: 'circle', source: 'bus-stops', minzoom: 15.5, paint: { 'circle-radius': 16, 'circle-color': '#000000', 'circle-opacity': 0 } });
       map.addSource('vehicles', { type: 'geojson', data: EMPTY });
       map.addLayer({
         id: 'vehicles',
@@ -200,7 +226,7 @@ export default function MapScreen({ path }: { path: string }) {
         const id = e.features?.[0]?.properties?.id;
         if (id) setSheet({ kind: 'vehicle', id: String(id) });
       });
-      for (const l of ['station-ring', 'bus-stops']) {
+      for (const l of ['station-hit', 'bus-stop-hit']) {
         open(l, (e) => {
           const id = e.features?.[0]?.properties?.id;
           if (id) setSheet({ kind: 'stop', id: String(id) });
@@ -326,8 +352,8 @@ export default function MapScreen({ path }: { path: string }) {
           })();
     if (!pos) return;
     const h = map.getContainer().clientHeight;
-    map.easeTo({ center: [pos.lon, pos.lat], offset: [0, -h * 0.28], duration: reducedMotion ? 0 : 500 });
-  }, [ready, selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
+    map.easeTo({ center: [pos.lon, pos.lat], zoom: kind === 'stop' ? Math.max(map.getZoom(), 15) : map.getZoom(), offset: [0, -h * 0.28], duration: reducedMotion ? 0 : 500 });
+  }, [ready, selectedId, stations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Selecting a bus shows its route line.
   useEffect(() => {
@@ -367,25 +393,13 @@ export default function MapScreen({ path }: { path: string }) {
   // Fly to you once, the first time we know where you are.
   const flown = useRef(false);
   useEffect(() => {
-    if (here && mapRef.current && !flown.current && !searchParam(path, 'stop')) {
+    if (here && mapRef.current && !flown.current && !sheet) {
       flown.current = true;
       mapRef.current.easeTo({ center: [here.lon, here.lat], zoom: 15, duration: reducedMotion ? 0 : 800 });
     }
-  }, [here, path, reducedMotion]);
+  }, [here, sheet, reducedMotion]);
 
-  // /map?stop=… (from "Show on map"): centre on it and open its sheet.
-  const stopParam = searchParam(path, 'stop');
-  useEffect(() => {
-    if (!stopParam || !ready || !stations) return;
-    const s = stations.find((x) => x.id === stopParam);
-    if (s) mapRef.current?.easeTo({ center: [s.longitude, s.latitude], zoom: 15.5, duration: reducedMotion ? 0 : 600 });
-    setSheet({ kind: 'stop', id: stopParam });
-  }, [stopParam, ready, stations, reducedMotion]);
-
-  const closeSheet = useCallback(() => {
-    setSheet(null);
-    if (stopParam) navigate('/map', { replace: true });
-  }, [stopParam]);
+  const closeSheet = useCallback(() => closeSheetStep(), []);
 
   // ── Nearest station, docked at the bottom ────────────────────────────────
   const [nearby, setNearby] = useState<NearbyResponse | null>(null);
@@ -427,6 +441,11 @@ export default function MapScreen({ path }: { path: string }) {
         <div className="absolute inset-0">
           <div ref={container} className="h-full w-full" role="region" aria-label="Map of transit around you. The In view list has the same information as text." />
         </div>
+        {!ready && !mapError ? (
+          <div className="bg-surface-2 text-muted absolute inset-0 z-10 flex items-center justify-center text-sm font-semibold" role="status">
+            Loading map…
+          </div>
+        ) : null}
         {mapError ? (
           <p className="bg-surface-2 absolute inset-x-6 top-1/2 z-10 rounded-2xl p-4 text-center text-sm">
             This device can't draw the map. Use the list button on the right to see the vehicles and stations around downtown.
@@ -451,7 +470,6 @@ export default function MapScreen({ path }: { path: string }) {
               <span className={`size-2 rounded-full ${statusTone === 'live' ? 'live-dot bg-[#51df8e]' : 'bg-current'}`} aria-hidden />
               {statusText}
             </p>
-            {feed.status?.vehicles.source === 'gtfs-rt' && statusTone === 'live' ? <span className="bg-surface-2 text-muted pointer-events-auto rounded-full px-2.5 py-1 text-xs shadow-float">updates every 10 s</span> : null}
           </div>
           <div role="group" aria-label="Show on the map" className="no-scrollbar pointer-events-auto -mx-3 flex gap-2 overflow-x-auto px-3 pb-1">
             {MODE_CHIPS.map(({ key, label, Icon }) => (

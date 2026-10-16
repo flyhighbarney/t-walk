@@ -1,4 +1,4 @@
-// Saved: the stops you've pinned, with live departures.
+// Saved: commutes, the stops you've pinned with live departures, and your walking pace.
 
 import { useEffect, useMemo, useState } from 'react';
 import { STATION_ENTRY_SECONDS, estimateWalk, haversineMeters, type StopResponse } from '@twalk/core';
@@ -12,6 +12,7 @@ import { useLocation } from '../lib/location.ts';
 import { useLocationOptIn, usePinnedStops, useStepFree, useWalkPace } from '../lib/storage.ts';
 import { useStopAlerts } from '../components/Alerts.tsx';
 import { CommutesSection } from './commutes/Commutes.tsx';
+import { PaceSection } from './PaceSection.tsx';
 import { useKeepOffline, useOfflineBoards, useOnline, usePack } from '../lib/offline.ts';
 
 export default function SavedScreen() {
@@ -87,6 +88,7 @@ export default function SavedScreen() {
             />
           );
         })}
+        <PaceSection />
       </main>
     </>
   );

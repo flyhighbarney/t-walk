@@ -6,6 +6,7 @@
 //   GET /api/map/stops?bbox=        bus stops in a small box (street zoom)
 //   GET /api/map/vehicles?bbox=&modes=   SSE: vehicles in view, then only changes
 //   GET /api/vehicles/:id           a vehicle and its next stops
+//   GET /api/trips/:tripId/live     the vehicle on a trip and the trip's remaining stops (navigation)
 //   GET /api/bikes                  Bluebikes stations with live counts
 
 import { createHash } from 'node:crypto';
@@ -18,6 +19,7 @@ import {
   type Mode,
   type ShapeCollection,
   type ShapeFeature,
+  type TripLive,
   type Vehicle,
   type VehicleDetail,
   type VehicleStop,
@@ -225,13 +227,8 @@ export function registerMapRoutes(app: FastifyInstance, deps: MapDeps): void {
     sse.onClose(() => clearInterval(timer));
   });
 
-  app.get<{ Params: { id: string } }>('/api/vehicles/:id', (req, reply) => {
-    const db = deps.getDb();
-    const v = store.vehicles.items.get(req.params.id);
-    const map = v ? toMap(db, v) : null;
-    if (!v || !map) return reply.code(404).send({ error: 'This vehicle is no longer reporting' });
-    const now = clock.now();
-    const stops: VehicleStop[] = (v.tripId ? store.predictionsForTrip(v.tripId) : [])
+  const tripStops = (db: GtfsDb, tripId: string | null, now: number): VehicleStop[] =>
+    (tripId ? store.predictionsForTrip(tripId) : [])
       .filter((p) => (p.arrivalTime ?? p.departureTime ?? 0) >= now - 60_000 || p.scheduleRelationship === 'SKIPPED')
       .sort((a, b) => a.stopSequence - b.stopSequence)
       .map((p) => ({
@@ -242,7 +239,31 @@ export function registerMapRoutes(app: FastifyInstance, deps: MapDeps): void {
         status: p.status,
         canceled: p.scheduleRelationship === 'SKIPPED' || p.scheduleRelationship === 'CANCELED',
       }));
+
+  app.get<{ Params: { id: string } }>('/api/vehicles/:id', (req, reply) => {
+    const db = deps.getDb();
+    const v = store.vehicles.items.get(req.params.id);
+    const map = v ? toMap(db, v) : null;
+    if (!v || !map) return reply.code(404).send({ error: 'This vehicle is no longer reporting' });
+    const now = clock.now();
+    const stops = tripStops(db, v.tripId, now);
     const body: VehicleDetail = { now, vehicle: map, route: db.routes().get(map.routeId) ?? null, stops, status: boards.status() };
+    return body;
+  });
+
+  app.get<{ Params: { tripId: string } }>('/api/trips/:tripId/live', (req, reply) => {
+    const db = deps.getDb();
+    const now = clock.now();
+    const tripId = req.params.tripId;
+    let vehicle: MapVehicle | null = null;
+    for (const v of store.vehicles.items.values()) {
+      if (v.tripId === tripId) {
+        vehicle = toMap(db, v);
+        break;
+      }
+    }
+    const body: TripLive = { now, tripId, vehicle, stops: tripStops(db, tripId, now), status: boards.status() };
+    reply.header('cache-control', 'no-store');
     return body;
   });
 

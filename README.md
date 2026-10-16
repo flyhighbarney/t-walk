@@ -13,6 +13,10 @@ stop, and a live map of every train, bus and boat around you.
 - **Phase 4:** saved commutes with "Leave by", leave-now push notifications,
   backup plans around disruptions, alerts for your stops and lines, and offline
   mode.
+- **Phase 5:** navigation like Apple Maps / Google Maps: Start on any trip opens a
+  follow-me map, turn-by-turn walking, live departure and stop counts on board
+  ("Your stop is next"), shareable ETA links, and a learned walking pace. Roboto
+  font, and the fixes from a UI/UX audit (`docs/ux-audit-phase5.md`).
 
 Accuracy rules:
 
@@ -179,6 +183,24 @@ Then start the server with `OTP_URL=http://127.0.0.1:8792` and `PHOTON_URL=http:
   - Offline, Now and Saved build boards from it with the same rules as the server, labelled Scheduled, with a banner giving when it was saved.
   - The last known difference between the device and server clocks is kept, so times stay right offline too.
 
+## Navigation (Phase 5)
+
+Open a trip on Trips and tap **Start** (`/go`). The logic is pure and tested (`packages/core/src/nav.ts`); the screen is `apps/web/src/screens/go/`.
+
+- **Banner:** the next instruction, with how far ahead it is, in feet and miles. Walks use OTP's step positions ("Turn left on Winter St · 550 ft"). Waiting shows the line, the platform and where to get off. On board it shows "Get off in 3 stops", "Your stop is next" (phone buzzes) and "Get off at …" (buzzes harder; a notification if T-Walk is in the background and notifications are allowed).
+- **Map:** follows you, turned the way you face (compass, or GPS course while moving) and tilted. Touch it and it stops following until **Re-center**. Done legs turn grey. The vehicle you're waiting for or riding is drawn from its live reports.
+- **Live tracking:** `GET /api/trips/:tripId/live` gives the vehicle running your trip and the trip's remaining stops with predictions. It's polled every 10 s, or every 5 s when your stop is within two.
+- **Underground,** where there's no GPS: once you're on board (tap **I'm on board**, or T-Walk sees you move off along the line), the vehicle's reports stand in for you. You're drawn hollow, with "Following the train's live position".
+- **Honesty:** stop counts come from the vehicle's live position or yours, never from elapsed time. With neither, it just says "Ride to …". A fix older than 45 s or vaguer than 80 m doesn't move you along a walk. Times say Live or Scheduled.
+- **Off the route,** or too slow to make the departure: **Re-plan from here**.
+- **Keeps going** across a reload (the trip is kept on the device). Trips and Now show **Trip in progress · Resume**. The screen stays on while navigating, where the browser allows it.
+- **Share ETA** makes a link (`/share/:id`) that shows only the expected arrival and a short status ("On the Red Line, 3 stops to go"), never a location.
+  - It's kept in server memory only.
+  - It ends when you stop sharing or end the trip, 15 minutes after you arrive, or after 6 hours.
+  - Updates need the link's secret token.
+- **Learned pace** (opt-in, Saved): navigated walks with good GPS are timed. After about a quarter mile, the average speed (including waits at crossings) is kept on the device and used for navigation ETAs. Saved offers the nearest pace for planning, and **Forget it**.
+- **Routes in the URL:** Trips keeps from, to, time and sort in the URL, so refresh and shared links work. The open trip is a history step, so Back closes it. Map sheets (`?stop=`, `?vehicle=`, `?bike=`, `?sheet=`) work the same way.
+
 ## How live data flows
 
 ```
@@ -210,9 +232,9 @@ cdn.mbta.com ─poll─┘  GTFS-realtime: no-key mode, and fallback when a V3 s
 ## Tests
 
 ```bash
-npm test                    # Vitest: core, motion, trips, fares, alerts, commutes, adapters, replay, API, map, planner, push (158 tests)
+npm test                    # Vitest: core, motion, trips, fares, alerts, commutes, adapters, replay, API, map, planner, push (177 tests)
 npm run smoke:plan          # real trips through a running server and OTP
-npm run test:e2e            # builds, then Playwright with replay servers and a stand-in OTP (18 tests: offline, commutes, alerts, axe on Now, Map, Trips)
+npm run test:e2e            # builds, then Playwright with replay servers and a stand-in OTP (22 tests: offline, commutes, alerts, navigation, sharing, Back on Map and Trips, axe on Now, Map, Trips, navigation)
 npm run lighthouse          # builds, then a mobile Lighthouse run of Now on the replay
 npm run lighthouse -- map   # the same for the Map screen
 npm run typecheck && npm run lint
@@ -255,7 +277,7 @@ GTFS_DIR=fixtures/gtfs DATA_DIR=data-fixture REPLAY_FILE=fixtures/replay/normal.
 
 | Screen | Performance | Accessibility | Best practices |
 |---|---|---|---|
-| Now (landing) | 99 (FCP 1.6 s, LCP 1.9 s) | 100 | 100 |
+| Now (landing) | 97 (FCP 1.9 s, LCP 2.2 s, CLS 0; Roboto self-hosted) | 100 | 100 |
 | Map | 51 (TBT 5.8 s) | 100 | 100 |
 
 The Map's score is MapLibre starting its WebGL engine and decoding vector tiles
@@ -269,7 +291,10 @@ on Lighthouse's 4× slowed CPU. Ways to bring it up are listed under known gaps.
 - **Shuttles and diversions** are drawn only as their buses (shuttle routes are
   in the feed). Outlining a diversion from its alert needs alerts, so an API key.
 - **Push notifications haven't been tested on a real phone yet**, only through the server's own tests. Headless browsers can't subscribe to a push service.
-- **Personal commute stats** (average time, on-time rate) need records of trips actually taken: Phase 5 (trip companion).
+- **Personal commute stats** (average time, on-time rate) need records of trips actually taken. Navigation could log them (opt-in); not built yet.
+- **Navigation hasn't been walked on a real phone yet.** It was tested with simulated GPS (Playwright and the browser pane): compass, wake lock, vibration and background notifications need a device.
+- **Walking preferences beyond step-free** (well-lit streets, fewer hills, crosswalks) aren't offered: there's no trustworthy data for them in OTP's graph yet. Best entrance and weather-aware leave times exist (OTP's station entrances; NWS rain/snow in leave-now notifications), not as separate settings.
+- **Transfer pathways** inside stations come from OTP's step list ("Follow the signs", "Take the elevator"); the MBTA's pathways.txt isn't drawn on the map.
 - **The V3 streaming path is untested against live data** until a key is set;
   the GTFS-realtime path is what ran on live data.
 - **Walking times on Now and the map are still straight-line × 1.3** (labelled "about"). The trip planner's walks use real streets.
@@ -279,8 +304,9 @@ on Lighthouse's 4× slowed CPU. Ways to bring it up are listed under known gaps.
 
 ## Privacy
 
-No account. Pinned stops, walking pace and the location opt-in are stored on
-the device. Location is read only while the page is open and visible, rounded
+No account. Pinned stops, walking pace (and the learned one, if turned on), the
+trip in progress and the location opt-in are stored on the device. A shared ETA
+holds only a destination name, a time and a status line, in server memory. Location is read only while the page is open and visible, rounded
 to about 11 m, sent to the T-Walk server for the nearby lookup, and not logged
 or stored there.
 

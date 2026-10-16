@@ -1,5 +1,6 @@
-// The "Now" screen: departures near you, sorted by how long it takes to walk
-// to each stop, plus the stops you've pinned.
+// The "Now" screen: "Where to?" first (as in the map apps), then departures
+// near you, sorted by how long it takes to walk to each stop, plus the stops
+// you've pinned. Walking pace is set at the bottom.
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -17,9 +18,11 @@ import { AppHeader } from '../components/Shell.tsx';
 import { StatusBanner } from '../components/StatusBanner.tsx';
 import { StopCard } from '../components/StopCard.tsx';
 import { StopSearch } from '../components/StopSearch.tsx';
-import { WalkIcon } from '../components/icons.tsx';
+import { ChevronIcon, SearchIcon, WalkIcon } from '../components/icons.tsx';
 import { fetchNearby, fetchStop } from '../lib/api.ts';
-import { useLiveBoards, useNow } from '../lib/live.ts';
+import { serverNow, useLiveBoards, useNow } from '../lib/live.ts';
+import { loadGo } from '../lib/navigation.ts';
+import { navigate } from '../lib/router.ts';
 import { useLocation } from '../lib/location.ts';
 import { useLocationOptIn, usePinnedStops, useStepFree, useWalkPace } from '../lib/storage.ts';
 import { useStopAlerts } from '../components/Alerts.tsx';
@@ -60,6 +63,42 @@ function PacePicker({ pace, onChange }: { pace: WalkPace; onChange: (p: WalkPace
         ))}
       </div>
     </fieldset>
+  );
+}
+
+function WhereTo() {
+  const [trip] = useState(() => loadGo(serverNow()));
+  if (trip) {
+    return (
+      <a
+        href="/go"
+        onClick={(e) => {
+          e.preventDefault();
+          navigate('/go');
+        }}
+        className="bg-brand text-on-brand shadow-float flex min-h-14 items-center justify-between gap-3 rounded-full px-5"
+      >
+        <span className="min-w-0">
+          <span className="block font-extrabold">Trip in progress</span>
+          <span className="block truncate text-sm">To {trip.to.name}</span>
+        </span>
+        <span className="font-extrabold">Resume</span>
+      </a>
+    );
+  }
+  return (
+    <a
+      href="/trips"
+      onClick={(e) => {
+        e.preventDefault();
+        navigate('/trips?focus=to');
+      }}
+      className="bg-surface-2 shadow-float flex min-h-14 items-center gap-3 rounded-full px-5 text-lg font-bold"
+    >
+      <SearchIcon className="text-brand-text shrink-0" />
+      <span className="flex-1">Where to?</span>
+      <ChevronIcon className="text-muted" />
+    </a>
   );
 }
 
@@ -185,7 +224,7 @@ export default function NowScreen() {
     <AppHeader title="Now" />
     <main className="pb-tabbar mx-auto max-w-xl px-4 pt-2">
       <div className="space-y-4">
-        <PacePicker pace={pace} onChange={setPace} />
+        <WhereTo />
         <StatusBanner status={status} connection={live.connection} lastMessageAt={live.lastMessageAt} offline={offline ? { savedAt: pack?.generatedAt ?? null } : null} />
 
         {!optIn ? <LocationIntro onAllow={() => setOptIn(true)} /> : null}
@@ -225,6 +264,7 @@ export default function NowScreen() {
           </section>
         ) : null}
         {nearby && nearby.stops.length === 0 ? <p className="text-muted">No stops with service within a 10-minute walk.</p> : null}
+        <PacePicker pace={pace} onChange={setPace} />
       </div>
 
       <footer className="text-muted mt-8 space-y-1 text-xs">

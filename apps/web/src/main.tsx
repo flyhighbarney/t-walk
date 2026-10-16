@@ -2,6 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App.tsx';
+// Roboto, self-hosted (only the subsets a page's text needs are fetched, by unicode-range).
+import '@fontsource-variable/roboto/index.css';
 import './styles.css';
 
 createRoot(document.getElementById('root')!).render(

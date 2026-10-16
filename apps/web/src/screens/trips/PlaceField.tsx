@@ -10,6 +10,8 @@ export function PlaceField(props: {
   onChange: (p: Place | null) => void;
   here: { lat: number; lon: number } | null;
   onUseHere: () => void;
+  /** Put the cursor here on arrival (from "Where to?"). */
+  autoFocus?: boolean;
 }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -20,6 +22,9 @@ export function PlaceField(props: {
   const listId = `${id}-list`;
   const input = useRef<HTMLInputElement>(null);
   const { here } = props;
+  useEffect(() => {
+    if (props.autoFocus && !props.value) input.current?.focus();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!open || q.trim().length < 2) {

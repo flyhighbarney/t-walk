@@ -42,7 +42,7 @@ export interface OtpLeg {
   trip?: { gtfsId: string; tripHeadsign?: string | null } | null;
   headsign?: string | null;
   legGeometry?: { points: string } | null;
-  steps?: { relativeDirection?: string | null; streetName?: string | null; absoluteDirection?: string | null; distance?: number }[] | null;
+  steps?: { relativeDirection?: string | null; streetName?: string | null; absoluteDirection?: string | null; distance?: number; lat?: number; lon?: number }[] | null;
   intermediatePlaces?: unknown[] | null;
   alerts?: { alertHeaderText?: string | null }[] | null;
   fareProducts?: {
@@ -82,8 +82,8 @@ query Plan($origin: PlanLabeledLocationInput!, $destination: PlanLabeledLocation
         route { gtfsId shortName longName color textColor }
         trip { gtfsId tripHeadsign }
         legGeometry { points }
-        steps { relativeDirection streetName absoluteDirection distance }
-        intermediatePlaces { name }
+        steps { relativeDirection streetName absoluteDirection distance lat lon }
+        intermediatePlaces { name lat lon stop { gtfsId } }
         alerts { alertHeaderText }
         fareProducts { id product { name medium { id name } riderCategory { id name } ... on DefaultFareProduct { price { amount currency { code } } } } }
       }
@@ -251,6 +251,15 @@ export function mapItinerary(
       alerts: [...new Set((l.alerts ?? []).map((a) => a.alertHeaderText).filter((x): x is string => !!x))],
       priceCents: l.transitLeg ? ridePrice(l) : null,
       stayOn: l.transitLeg && l.interlineWithPreviousLeg === true,
+      stepPoints: (l.steps ?? [])
+        .filter((s) => typeof s.lat === 'number' && typeof s.lon === 'number')
+        .map((s) => ({ text: stepText(s), lat: s.lat!, lon: s.lon!, distanceM: s.distance ?? 0 })),
+      rideStops: l.transitLeg
+        ? (l.intermediatePlaces ?? []).flatMap((p) => {
+            const q = p as { name?: string; lat?: number; lon?: number; stop?: { gtfsId?: string } | null };
+            return typeof q.lat === 'number' && typeof q.lon === 'number' ? [{ name: q.name ?? 'Stop', stopId: stripFeed(q.stop?.gtfsId), lat: q.lat, lon: q.lon }] : [];
+          })
+        : [],
     };
   });
   const walk = legs.filter((l) => !l.transit);

@@ -25,7 +25,7 @@ function write(key: string, value: unknown): void {
 const values = new Map<string, unknown>();
 const listeners = new Map<string, Set<() => void>>();
 
-function useStored<T>(key: string, fallback: T): [T, (next: T) => void] {
+export function useStored<T>(key: string, fallback: T): [T, (next: T) => void] {
   const subscribe = useCallback(
     (fn: () => void) => {
       let set = listeners.get(key);
@@ -120,4 +120,14 @@ export function useCommutes(): {
       setServerIds(next);
     },
   };
+}
+
+/** Learn walking pace from navigated walks (opt-in; kept on this device only). */
+export function useLearnPace(): [boolean, (v: boolean) => void] {
+  return useStored<boolean>('twalk.pace.learn.v1', false);
+}
+
+/** Walking speed measured on navigated walks, m/s, or null until there's one. */
+export function useLearnedSpeed(): [number | null, (v: number | null) => void] {
+  return useStored<number | null>('twalk.pace.learned.v1', null);
 }

@@ -71,7 +71,7 @@ export class GtfsDb {
         WHERE s.name LIKE ? ESCAPE '\\'
           AND (s.location_type = 1 OR (s.location_type = 0 AND (s.parent_station IS NULL OR s.parent_station = '')))
           AND EXISTS (SELECT 1 FROM stop_routes r WHERE r.stop_id = s.stop_id)
-        ORDER BY s.location_type DESC, length(s.name) LIMIT ?`),
+        ORDER BY s.location_type DESC, (s.name LIKE ? ESCAPE '\\') DESC, (s.name LIKE ? ESCAPE '\\') DESC, length(s.name) LIMIT ?`),
       schedules: this.db.prepare(`
         SELECT st.trip_id, st.stop_id, st.stop_sequence, st.arr, st.dep, st.stop_headsign,
                st.pickup_type, st.drop_off_type, t.route_id, t.direction_id, t.headsign, ts.start_secs
@@ -225,7 +225,8 @@ export class GtfsDb {
   search(query: string, limit = 20): StopSummary[] {
     const q = query.trim().replace(/[\\%_]/g, (c) => `\\${c}`);
     if (q.length < 2) return [];
-    return (this.stmts.search!.all(`%${q}%`, limit) as unknown as StopRow[]).map((r) => this.summary(r));
+    // Stations first; within them, names that start with the query, then a word that does ("Park": Park Street before Hyde Park).
+    return (this.stmts.search!.all(`%${q}%`, `${q}%`, `% ${q}%`, limit) as unknown as StopRow[]).map((r) => this.summary(r));
   }
 
   tripHeadsign(tripId: string): string | null {

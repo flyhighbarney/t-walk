@@ -12,3 +12,4 @@ export * from './trip.ts';
 export * from './fares.ts';
 export * from './alerts.ts';
 export * from './commute.ts';
+export * from './nav.ts';

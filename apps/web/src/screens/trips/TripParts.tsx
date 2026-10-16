@@ -17,7 +17,7 @@ export const clock = (ms: number) => formatClock(ms).full;
 export const minutes = (s: number) => formatMinutes(Math.max(1, Math.round(s / 60))).text;
 export const money = (cents: number) => (cents === 0 ? 'Free' : `$${(cents / 100).toFixed(2)}`);
 
-function readable(hex: string | null): { background: string; color: string } {
+export function readable(hex: string | null): { background: string; color: string } {
   const bg = hex && /^[0-9a-f]{6}$/i.test(hex) ? hex : '666666';
   const n = Number.parseInt(bg, 16);
   const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;

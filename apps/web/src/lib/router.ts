@@ -3,6 +3,8 @@
 import { useSyncExternalStore } from 'react';
 
 export type Tab = 'now' | 'map' | 'trips' | 'saved';
+/** Full-screen views without the tab bar: navigation, and a shared ETA. */
+export type Screen = Tab | 'go' | 'share';
 
 const listeners = new Set<() => void>();
 window.addEventListener('popstate', () => listeners.forEach((l) => l()));
@@ -16,14 +18,17 @@ export function useLocationPath(): string {
   return useSyncExternalStore(subscribe, () => location.pathname + location.search);
 }
 
-export function navigate(path: string, opts: { replace?: boolean } = {}): void {
+export function navigate(path: string, opts: { replace?: boolean; state?: Record<string, unknown> } = {}): void {
   if (path === location.pathname + location.search) return;
-  if (opts.replace) history.replaceState(null, '', path);
-  else history.pushState(null, '', path);
+  // Entries we push are marked, so an in-app Back only goes back within T-Walk.
+  if (opts.replace) history.replaceState(history.state, '', path);
+  else history.pushState({ twalkOpened: true, ...opts.state }, '', path);
   listeners.forEach((l) => l());
 }
 
-export function tabOf(path: string): Tab {
+export function tabOf(path: string): Screen {
+  if (path.startsWith('/go')) return 'go';
+  if (path.startsWith('/share/')) return 'share';
   if (path.startsWith('/map')) return 'map';
   if (path.startsWith('/saved')) return 'saved';
   if (path.startsWith('/trips')) return 'trips';

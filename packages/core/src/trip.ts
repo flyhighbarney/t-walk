@@ -59,6 +59,25 @@ export interface TripLeg {
   priceCents: number | null;
   /** The vehicle carries on as this ride (same seat, new trip number): not a transfer. */
   stayOn: boolean;
+  /** Walks: each turn with where it is, for turn-by-turn navigation. */
+  stepPoints?: WalkStep[];
+  /** Rides: the stops passed through (not boarding or getting off), in order. */
+  rideStops?: RideStop[];
+}
+
+export interface WalkStep {
+  text: string;
+  lat: number;
+  lon: number;
+  /** Metres walked on this step. */
+  distanceM: number;
+}
+
+export interface RideStop {
+  name: string;
+  stopId: string | null;
+  lat: number;
+  lon: number;
 }
 
 /** Changes of vehicle: rides after the first, not counting staying on board. */

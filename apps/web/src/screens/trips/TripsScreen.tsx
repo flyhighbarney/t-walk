@@ -1,13 +1,17 @@
 // Trips: plan door to door. From/to, leave now / leave at / arrive by,
 // step-free, and the four ways to sort. Tap a result for its steps, its
-// route on a map, and "What if I miss it?" for each ride.
+// route on a map, and "What if I miss it?" for each ride. Start opens
+// navigation. The question (from, to, when, sort) and the open trip live in the
+// URL, so refresh, Back and shared links all work.
 
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { RISK_LABEL, bestTime, describeTransfer, saferAlternative, sortOptions, type PlanResponse, type PlanSort, type TripOption } from '@twalk/core';
 import { AppHeader } from '../../components/Shell.tsx';
 import { SwapIcon, WarnIcon, WheelchairIcon } from '../../components/icons.tsx';
 import { useLocation } from '../../lib/location.ts';
-import { searchParam } from '../../lib/router.ts';
+import { navigate, searchParam } from '../../lib/router.ts';
+import { loadGo, saveGo } from '../../lib/navigation.ts';
+import { serverNow } from '../../lib/live.ts';
 import { useLocationOptIn, useStepFree, useWalkPace } from '../../lib/storage.ts';
 import { FilterChip } from '../map/OtherSheets.tsx';
 import { AlertList, useTripAlerts } from '../../components/Alerts.tsx';
@@ -24,12 +28,25 @@ const SORTS: { value: PlanSort; label: string }[] = [
   { value: 'most-reliable', label: 'Most reliable' },
 ];
 
+const HERE: Place = { name: 'My location', lat: 0, lon: 0, isHere: true };
+
 function placeFromParams(path: string, which: 'from' | 'to'): Place | null {
   const raw = searchParam(path, which);
+  if (raw === 'here') return HERE;
   const [lat, lon] = (raw ?? '').split(',').map(Number);
   if (!raw || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
   return { name: searchParam(path, `${which}Name`) ?? 'Chosen place', lat: lat!, lon: lon! };
 }
+
+function placeParams(q: URLSearchParams, which: 'from' | 'to', p: Place | null): void {
+  if (!p) return;
+  if (p.isHere) return q.set(which, 'here');
+  q.set(which, `${p.lat.toFixed(5)},${p.lon.toFixed(5)}`);
+  q.set(`${which}Name`, p.name);
+}
+
+const TIME_MODES: TimeMode[] = ['now', 'leave', 'arrive'];
+const SORT_VALUES: PlanSort[] = ['fastest', 'least-walking', 'fewest-transfers', 'most-reliable'];
 
 export default function TripsScreen({ path }: { path: string }) {
   const [optIn, setOptIn] = useLocationOptIn();
@@ -37,15 +54,48 @@ export default function TripsScreen({ path }: { path: string }) {
   const here = location.kind === 'ok' ? { lat: location.lat, lon: location.lon } : null;
   const [pace] = useWalkPace();
   const [stepFree, setStepFree] = useStepFree();
-  const [from, setFrom] = useState<Place | null>(() => placeFromParams(path, 'from') ?? (optIn ? { name: 'My location', lat: 0, lon: 0, isHere: true } : null));
+  const [from, setFrom] = useState<Place | null>(() => placeFromParams(path, 'from') ?? (optIn ? HERE : null));
   const [to, setTo] = useState<Place | null>(() => placeFromParams(path, 'to'));
-  const [timeMode, setTimeMode] = useState<TimeMode>('now');
-  const [localTime, setLocalTime] = useState(() => bostonLocalNow(Date.now()));
-  const [sort, setSort] = useState<PlanSort>('fastest');
+  const [timeMode, setTimeMode] = useState<TimeMode>(() => TIME_MODES.find((m) => m === searchParam(path, 'when')) ?? 'now');
+  const [localTime, setLocalTime] = useState(() => searchParam(path, 'time') ?? bostonLocalNow(Date.now()));
+  const [sort, setSort] = useState<PlanSort>(() => SORT_VALUES.find((s) => s === searchParam(path, 'sort')) ?? 'fastest');
   const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [error, setError] = useState('');
-  const [openId, setOpenId] = useState<string | null>(null);
+  // The open trip is a step in history: Back closes it.
+  const openId = searchParam(path, 'open');
+  const [inProgress] = useState(() => loadGo(serverNow()));
+
+  // No location: "My location" can't be the start.
+  useEffect(() => {
+    if ((location.kind === 'denied' || location.kind === 'unavailable') && from?.isHere) setFrom(null);
+  }, [location.kind]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const query = useMemo(() => {
+    const q = new URLSearchParams();
+    placeParams(q, 'from', from);
+    placeParams(q, 'to', to);
+    if (timeMode !== 'now') {
+      q.set('when', timeMode);
+      q.set('time', localTime);
+    }
+    if (sort !== 'fastest') q.set('sort', sort);
+    return q;
+  }, [from, to, timeMode, localTime, sort]);
+  useEffect(() => {
+    const q = new URLSearchParams(query);
+    if (openId) q.set('open', openId);
+    const s = q.toString();
+    navigate(s ? `/trips?${s}` : '/trips', { replace: true });
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
+  const setOpenId = (id: string | null) => {
+    if (id) {
+      const q = new URLSearchParams(query);
+      q.set('open', id);
+      navigate(`/trips?${q}`);
+    } else if (history.state?.twalkOpened) history.back();
+    else navigate(`/trips?${query}`, { replace: true });
+  };
   const [missed, setMissed] = useState<{ legIndex: number; text: string } | null>(null);
 
   // "My location" follows the device.
@@ -76,7 +126,10 @@ export default function TripsScreen({ path }: { path: string }) {
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const options = useMemo(() => (plan ? sortOptions(plan.options, sort, timeMode === 'arrive') : []), [plan, sort, timeMode]);
-  const open = options.find((o) => o.id === openId) ?? null;
+  // After a refresh the plan is fetched again and start times move a little, so
+  // fall back to the same rides (the id's part after the start time).
+  const rides = (id: string) => id.slice(id.indexOf('-'));
+  const open = openId ? (options.find((o) => o.id === openId) ?? options.find((o) => rides(o.id) === rides(openId)) ?? null) : null;
   const openRides = open?.legs.filter((l) => l.transit) ?? [];
   const tripAlerts = useTripAlerts(
     openRides.flatMap((l) => [l.from.stopId, l.to.stopId]).filter((s): s is string => !!s),
@@ -86,7 +139,20 @@ export default function TripsScreen({ path }: { path: string }) {
 
   const useHere = (set: (p: Place) => void) => {
     if (!optIn) setOptIn(true);
-    set({ name: 'My location', lat: 0, lon: 0, isHere: true });
+    set(HERE);
+  };
+
+  const start = (option: TripOption) => {
+    const dest = option.legs[option.legs.length - 1]!.to;
+    saveGo({
+      option,
+      startedAt: serverNow(),
+      progress: { legIndex: 0, onBoard: false, arrived: false },
+      to: { name: rTo && !rTo.isHere ? rTo.name : dest.name, lat: dest.lat, lon: dest.lon },
+      stepFree,
+      share: null,
+    });
+    navigate('/go');
   };
 
   const whatIfMissed = async (option: TripOption, legIndex: number) => {
@@ -119,6 +185,15 @@ export default function TripsScreen({ path }: { path: string }) {
             Back
           </button>
         </AppHeader>
+        {/* Start, always in reach above the tab bar, as in the map apps. */}
+        <div className="fixed inset-x-0 z-20 px-4" style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}>
+          <button type="button" onClick={() => start(open)} className="bg-brand text-on-brand shadow-float mx-auto flex min-h-14 w-full max-w-xl items-center justify-center gap-2 rounded-full text-lg font-extrabold">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden fill="currentColor">
+              <path d="M12 2 4 21l8-4 8 4z" />
+            </svg>
+            Start
+          </button>
+        </div>
         <main className="pb-tabbar mx-auto max-w-xl space-y-4 px-4 pt-2">
           <section aria-labelledby="trip-h" className="bg-surface rounded-2xl p-4">
             <h2 id="trip-h" className="tabular text-2xl font-extrabold">
@@ -171,7 +246,7 @@ export default function TripsScreen({ path }: { path: string }) {
               </p>
             </li>
           </ol>
-          <p className="text-muted text-xs">Times marked Live are MBTA predictions; Scheduled times are not live. Walking times assume about {pace === 'normal' ? '2.8' : pace === 'slow' ? '2.1' : '3.5'} mph.</p>
+          <p className="text-muted pb-20 text-xs">Times marked Live are MBTA predictions; Scheduled times are not live. Walking times assume about {pace === 'normal' ? '2.8' : pace === 'slow' ? '2.1' : '3.5'} mph.</p>
         </main>
       </>
     );
@@ -181,11 +256,20 @@ export default function TripsScreen({ path }: { path: string }) {
     <>
       <AppHeader title="Trips" />
       <main className="pb-tabbar mx-auto max-w-xl space-y-4 px-4 pt-2">
+        {inProgress ? (
+          <button type="button" onClick={() => navigate('/go')} className="bg-brand text-on-brand shadow-float flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl px-4 text-left">
+            <span>
+              <span className="block font-extrabold">Trip in progress</span>
+              <span className="block text-sm">To {inProgress.to.name}</span>
+            </span>
+            <span className="font-extrabold">Resume</span>
+          </button>
+        ) : null}
         <section aria-label="Plan a trip" className="bg-surface space-y-3 rounded-2xl p-4">
           <div className="flex items-end gap-2">
             <div className="min-w-0 flex-1 space-y-3">
               <PlaceField label="From" value={from} onChange={setFrom} here={here} onUseHere={() => useHere(setFrom)} />
-              <PlaceField label="To" value={to} onChange={setTo} here={here} onUseHere={() => useHere(setTo)} />
+              <PlaceField label="To" value={to} onChange={setTo} here={here} onUseHere={() => useHere(setTo)} autoFocus={searchParam(path, 'focus') === 'to'} />
             </div>
             <button
               type="button"

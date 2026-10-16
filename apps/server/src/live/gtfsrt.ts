@@ -64,9 +64,14 @@ interface VehicleEntity {
 }
 
 export function feedTimestamp(text: string): number | null {
-  // The header comes first; avoid parsing a 500 KB document just for it.
-  const m = /"timestamp"\s*:\s*(\d+)/.exec(text.slice(0, 400));
-  return m ? Number(m[1]) * 1000 : null;
+  // Avoid parsing a 500 KB document just for the header. It isn't always first:
+  // VehiclePositions_enhanced.json puts "entity" before "header" (seen 2026-10-16),
+  // and the first "timestamp" there is a vehicle's, often minutes old.
+  const re = /"header"\s*:\s*\{[^}]*?"timestamp"\s*:\s*(\d+)/;
+  const m = re.exec(text.slice(0, 400)) ?? re.exec(text.slice(-400));
+  if (m) return Number(m[1]) * 1000;
+  const parsed = JSON.parse(text) as { header?: { timestamp?: number } };
+  return typeof parsed.header?.timestamp === 'number' ? parsed.header.timestamp * 1000 : null;
 }
 
 /** Same id scheme as the V3 API ("prediction-{trip}-{stop}-{seq}-{route}"), so the two sources line up. */

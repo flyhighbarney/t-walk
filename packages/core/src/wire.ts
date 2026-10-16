@@ -146,6 +146,16 @@ export interface VehicleDetail {
   status: LiveStatus;
 }
 
+/** The vehicle running a trip, and that trip's remaining stops (navigation). */
+export interface TripLive {
+  now: number;
+  tripId: string;
+  /** Null when no vehicle reports this trip (not started, or not tracked). */
+  vehicle: MapVehicle | null;
+  stops: VehicleStop[];
+  status: LiveStatus;
+}
+
 export interface BikeStation {
   id: string;
   name: string;
@@ -178,4 +188,15 @@ export interface OfflinePack {
   stops: (StopSummary & { platforms: string[] })[];
   routes: RouteInfo[];
   schedules: Record<string, import('./model.ts').ScheduledStopTime[]>;
+}
+
+/** What someone sees from a shared ETA link. No location: just when, and how it's going. */
+export interface ShareView {
+  now: number;
+  name: string | null;
+  to: string;
+  eta: number;
+  status: string;
+  updatedAt: number;
+  arrived: boolean;
 }
