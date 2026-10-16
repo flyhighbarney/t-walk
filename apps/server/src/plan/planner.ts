@@ -5,6 +5,7 @@
 
 import {
   WALK_SPEED,
+  localDate,
   foldRepeats,
   isSubway,
   mergeOptions,
@@ -23,6 +24,7 @@ import type { Clock } from '../live/clock.ts';
 import type { Ingest } from '../live/ingest.ts';
 import type { LiveStore } from '../live/store.ts';
 import { mapItinerary, OtpError, queryOtp, type OtpRoutingError, type PlanQuery } from './otp.ts';
+import { BUILTIN_NOTE, planBuiltin } from './builtin.ts';
 
 /** OTP's routing error codes (2.10 schema), in words a rider can act on. */
 const ROUTING_MESSAGES: Record<string, string> = {
@@ -120,7 +122,48 @@ export class Planner {
   private historyBuffer = (leg: TripLeg): number | null =>
     this.history && leg.routeId && leg.to.stopId ? this.history.extraBufferS({ routeId: leg.routeId, stopId: leg.to.stopId }) : null;
 
+  /** OTP_URL=off: plan with the built-in planner only. */
+  private get otpConfigured(): boolean {
+    return this.otpUrl !== '' && this.otpUrl !== 'off';
+  }
+
+  /** Build the built-in planner's network and today's timetable ahead of the first plan. */
+  async warm(): Promise<void> {
+    const db = this.getDb();
+    await db.timetable().day(localDate(this.clock.now()));
+  }
+
+  /**
+   * OpenTripPlanner when it's configured and answers (street-by-street walks);
+   * otherwise the built-in planner on the same timetable.
+   */
   async plan(req: PlanRequest, signal?: AbortSignal): Promise<PlanResponse> {
+    if (this.otpConfigured) {
+      try {
+        return await this.planWithOtp(req, signal);
+      } catch (err) {
+        if (signal?.aborted) throw err;
+        // OTP is down or unreachable: carry on without it.
+      }
+    }
+    return this.planBuiltin(req);
+  }
+
+  private async planBuiltin(req: PlanRequest): Promise<PlanResponse> {
+    const now = this.clock.now();
+    const options = await planBuiltin(this.getDb(), req, now, {
+      label: this.label,
+      predictions: (tripId) => this.store.predictionsForTrip(tripId),
+      nextGap: this.nextGap,
+      historyBuffer: this.historyBuffer,
+      fares: this.fares(),
+    });
+    const messages = options.length > 0 ? [BUILTIN_NOTE] : ['No trips found for that time. Most MBTA service stops between about 1 and 5 AM; try a later time or a nearby place.'];
+    const live = (['heavy_rail', 'bus'] as const).some((m) => this.ingest.predictionHealth(m).state !== 'down');
+    return { now, options: foldRepeats(sortOptions(options, req.sort, req.arriveBy)).slice(0, 6), messages, live };
+  }
+
+  private async planWithOtp(req: PlanRequest, signal?: AbortSignal): Promise<PlanResponse> {
     const now = this.clock.now();
     const base: Omit<PlanQuery, 'flavor'> = {
       from: req.from,

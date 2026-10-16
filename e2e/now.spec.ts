@@ -70,7 +70,7 @@ test.describe('without location', () => {
 });
 
 test.describe('stream outage', () => {
-  test.use({ baseURL: 'http://127.0.0.1:8791', geolocation: HERE, permissions: ['geolocation'] });
+  test.use({ baseURL: `http://127.0.0.1:${Number(process.env.E2E_PORT ?? 8790) + 1}`, geolocation: HERE, permissions: ['geolocation'] });
 
   test('says live data is unavailable and shows the schedule, labelled', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('twalk.location.optin.v1', 'true'));

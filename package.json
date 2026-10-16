@@ -39,5 +39,10 @@
     "oxlint": "^1.88.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyhighbarney/t-walk.git"
   }
 }

@@ -127,13 +127,13 @@ describe('planning', () => {
     expect(body.options[0]!.walkOnly).toBe(false);
   });
 
-  it('says so when OTP is down, and validates its input', async () => {
+  it('plans with the built-in planner when OTP is down, and validates its input', async () => {
     const s = await setup(async () => {
       throw new Error('connect ECONNREFUSED');
     });
     const down = await s.app.inject({ url: `/api/plan?from=${FROM}&to=${TO}` });
-    expect(down.statusCode).toBe(503);
-    expect(down.json().error).toMatch(/isn't available/);
+    expect(down.statusCode).toBe(200);
+    expect((down.json() as PlanResponse).messages.join(' ')).toMatch(/straight-line distance/);
     expect((await s.app.inject({ url: `/api/plan?from=1,2&to=${TO}` })).statusCode).toBe(400);
     expect((await s.app.inject({ url: `/api/plan?from=${FROM}&to=${TO}&time=soon` })).statusCode).toBe(400);
   });

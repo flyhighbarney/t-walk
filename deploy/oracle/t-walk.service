@@ -1,0 +1,27 @@
+[Unit]
+Description=T-Walk server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=twalk
+Group=twalk
+WorkingDirectory=/opt/t-walk
+# Settings (MBTA key, push keys, OTP_URL…) live in /opt/t-walk/.env, readable only by twalk.
+ExecStart=/usr/local/bin/node --env-file-if-exists=/opt/t-walk/.env --disable-warning=ExperimentalWarning apps/server/src/main.ts
+Environment=HOST=127.0.0.1
+Environment=PORT=8787
+Environment=DATA_DIR=/var/lib/t-walk
+# The server saves its arrival history when it gets SIGINT.
+KillSignal=SIGINT
+TimeoutStopSec=20
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/t-walk
+
+[Install]
+WantedBy=multi-user.target

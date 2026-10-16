@@ -118,6 +118,8 @@ if (config.vapid && !replayEvents) {
 const app = await buildApp({ getDb: () => db, history: delays.history, boards, store, bikes, planner, geocoder, ingest, push, clock, webDist: config.webDist, logger: false });
 await app.listen({ port: config.port, host: config.host });
 log(`Listening on http://${config.host}:${config.port}`);
+// The built-in planner's timetable takes a few seconds to build: do it before anyone asks.
+planner.warm().then(() => log('Built-in planner ready'), (err: Error) => log(`Built-in planner warm-up failed: ${err.message}`));
 
 // Pick up new GTFS feeds (the MBTA publishes several a week). Not in replay or local-GTFS mode.
 if (!replayEvents && !config.gtfsDir) {
@@ -130,6 +132,7 @@ if (!replayEvents && !config.gtfsDir) {
         old.close();
         await pruneOldDatabases(config.dataDir, r.dbPath);
         log(`Switched to GTFS ${db.feedVersion}`);
+        void planner.warm().catch(() => {});
       }
     } catch (err) {
       log(`GTFS check failed: ${(err as Error).message}`);

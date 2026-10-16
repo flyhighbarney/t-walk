@@ -62,7 +62,7 @@ export function registerPlanRoutes(app: FastifyInstance, deps: { planner: Planne
       );
     } catch (err) {
       req.log.warn({ err }, 'plan failed');
-      return reply.code(503).send({ error: "The trip planner isn't available right now. Try again in a minute." });
+      return reply.code(503).send({ error: 'Trip planning is offline right now. Live departures and the map still work.' });
     }
   });
 

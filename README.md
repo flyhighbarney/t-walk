@@ -1,7 +1,25 @@
 # T-Walk
 
 Live MBTA departures near you, sorted by how long it takes to **walk** to each
-stop, and a live map of every train, bus and boat around you.
+stop, a live map of every train, bus and boat around you, door-to-door trip
+planning and turn-by-turn navigation for Boston's public transit.
+
+Open source under the [MIT License](LICENSE). Transit data comes from MassDOT and
+the MBTA ([data terms](#data-and-attribution)); T-Walk is not affiliated with or
+endorsed by either.
+
+**Quick start** (Node 24+, no keys needed):
+
+```bash
+git clone https://github.com/flyhighbarney/t-walk.git && cd t-walk
+npm install
+npm run gtfs:import      # downloads the MBTA timetable (~1 min)
+npm run build && npm start
+```
+
+Then open http://127.0.0.1:8787. To put it on the internet for free, follow
+**[Run T-Walk on Oracle Cloud's free tier](docs/deploy-oracle.md)**: one setup
+script, HTTPS included, on a 1 GB server.
 
 - **Phase 1:** the server, the GTFS import, the "Now" screen, the replay harness
   and the time-zone tests.
@@ -17,6 +35,9 @@ stop, and a live map of every train, bus and boat around you.
   follow-me map, turn-by-turn walking, live departure and stop counts on board
   ("Your stop is next"), shareable ETA links, and a learned walking pace. Roboto
   font, and the fixes from a UI/UX audit (`docs/ux-audit-phase5.md`).
+- **Phase 6:** an arrival-history model that widens transfer buffers for lines
+  that usually run late, and a **built-in trip planner** (RAPTOR over the MBTA
+  timetable) so trip planning works on a small server with no OpenTripPlanner.
 
 Accuracy rules:
 
@@ -52,13 +73,18 @@ apps/server       Fastify server: the only thing that talks to the MBTA
   src/gtfs        GTFS download (conditional) → SQLite import → queries
   src/live        V3 SSE streams, GTFS-realtime fallback, store, health, recorder, replay
   src/api         HTTP API and the SSE fan-out to browsers
-apps/web          Vite + React + Tailwind PWA: Now, Map (lazy-loaded MapLibre), Saved
+  src/plan        Trip planning: OpenTripPlanner client, built-in planner (builtin.ts, timetable.ts), geocoding
+apps/web          Vite + React + Tailwind PWA: Now, Map (lazy-loaded MapLibre), Trips, Navigation, Saved
   src/screens/map MapScreen, vehicleAnimator (frames), mapData (hooks), mapStyle, sheets
+deploy/oracle     setup.sh, update.sh and the systemd unit for a free Oracle Cloud (or any Ubuntu) server
+docs/             deploy-oracle.md (hosting guide), design and UX audits
+otp/              OpenTripPlanner configs (optional)
 design/stitch     The Stitch screens (HTML + PNG), DESIGN.md, and where the app departs from them
 fixtures/gtfs     A tiny made-up GTFS feed (Park Street, a bus stop, South Station…)
 fixtures/replay   Made-up scenarios in the recorder's format (see below)
 tests/            Replay and API tests;  e2e/  Playwright tests
-tools/            replay/record.ts, replay/make-fixtures.ts, lighthouse.ts, smoke-live.ts, make-icons.ts
+tools/            replay/record.ts, replay/make-fixtures.ts, lighthouse.ts, smoke-live.ts, make-icons.ts,
+                  compare-planners.ts (built-in planner vs OpenTripPlanner on real trips)
 ```
 
 ## Setup
@@ -68,7 +94,7 @@ stripping and uses the built-in `node:sqlite`; no native modules).
 
 ```bash
 npm install
-cp .env.example .env        # then put your MBTA API key in it
+cp .env.example .env        # optional: put your MBTA API key in it
 npm run gtfs:import         # downloads and imports the MBTA feed (~1 min, ~270 MB)
 npm run build               # builds the web app into apps/web/dist
 npm start                   # server on http://127.0.0.1:8787, serving the app too
@@ -93,6 +119,10 @@ npm run dev:web             # http://localhost:5173
 | `REPLAY_FILE` | Replay a recording instead of connecting to the MBTA. |
 | `FAKE_NOW` | Start the clock at this ISO time (with `REPLAY_FILE`). |
 | `RECORD_DIR` | Record every upstream event while running. |
+| `OTP_URL` | OpenTripPlanner's address (default `http://127.0.0.1:8080`). `off` plans with the built-in planner only; T-Walk also falls back to it whenever OTP doesn't answer. |
+| `PHOTON_URL` | Address search (default `https://photon.komoot.io/api/`). |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Web push keys for leave-now notifications: `npm run push:keys` adds them. |
+| `WEB_DIST` | The built web app the server serves (default `apps/web/dist`). |
 
 Secrets live only in `.env`, which is git-ignored.
 
@@ -120,7 +150,30 @@ Secrets live only in `.env`, which is git-ignored.
 - The MapLibre bundle (~295 KB gzipped) loads only when the Map tab is opened,
   and is not precached at install.
 
-## Trip planner (OpenTripPlanner)
+## Trip planner
+
+T-Walk has two planners and picks for you:
+
+- **OpenTripPlanner** (below), when `OTP_URL` points at one and it answers:
+  real street walking, turn-by-turn steps, step-free routing. Needs about 5 GB
+  of memory.
+- **The built-in planner** otherwise: `apps/server/src/plan/builtin.ts`. It runs
+  RAPTOR (`packages/core/src/raptor.ts`) over the timetable the server already has
+  (`plan/timetable.ts` lays it out in memory: about 0.4 s for the network and 5 s
+  per service day, done at start-up). A trip takes about 10 ms.
+  - It offers the fastest trip, the next two departures, and one with fewer changes.
+  - "Arrive by" finds the latest departure that still makes it.
+  - Trips past midnight use the previous day's late trips.
+  - Rides follow the GTFS shapes and get the same Live/Estimate/Scheduled labels,
+    fares and transfer risk as OTP's.
+  - Walks are the straight line × 1.3, like the rest of the app, so they have no
+    turn-by-turn steps, and step-free routing isn't available.
+  - On 15 real Boston trips at 8 AM it arrived within 2 minutes of OTP on the median,
+    10 of 15 within 5 minutes, 9 minutes apart at worst. Run
+    `node --disable-warning=ExperimentalWarning tools/compare-planners.ts` against a
+    running OTP to repeat the comparison.
+
+### OpenTripPlanner (optional)
 
 OTP 2.10 needs **Java 25** (Eclipse Temurin: `winget install EclipseAdoptium.Temurin.25.JDK`).
 
@@ -232,9 +285,10 @@ cdn.mbta.com ─poll─┘  GTFS-realtime: no-key mode, and fallback when a V3 s
 ## Tests
 
 ```bash
-npm test                    # Vitest: core, motion, trips, fares, alerts, commutes, adapters, replay, API, map, planner, push (177 tests)
+npm test                    # Vitest: core, motion, trips, fares, alerts, commutes, adapters, replay, API, map, planners, push (214 tests)
 npm run smoke:plan          # real trips through a running server and OTP
-npm run test:e2e            # builds, then Playwright with replay servers and a stand-in OTP (22 tests: offline, commutes, alerts, navigation, sharing, Back on Map and Trips, axe on Now, Map, Trips, navigation)
+npm run test:e2e            # builds, then Playwright with replay servers and a stand-in OTP (23 tests: offline, commutes, alerts, navigation, sharing, Back on Map and Trips, axe on Now, Map, Trips, navigation)
+E2E_PORT=8890 npm run test:e2e   # the same on ports 8890-8892, if 8790-8792 are busy
 npm run lighthouse          # builds, then a mobile Lighthouse run of Now on the replay
 npm run lighthouse -- map   # the same for the Map screen
 npm run typecheck && npm run lint
@@ -300,7 +354,9 @@ on Lighthouse's 4× slowed CPU. Ways to bring it up are listed under known gaps.
 - **Walking times on Now and the map are still straight-line × 1.3** (labelled "about"). The trip planner's walks use real streets.
 - **Planning far ahead shows scheduled times**: live labels only exist for the next hour or so of predictions.
 - **The graph needs rebuilding** (`npm run otp:build`, about 3.5 min, 5 GB of memory) when the MBTA publishes a new GTFS feed. That isn't automated yet.
-- **The MassDOT Developers License** hasn't been read yet. Read it before anything goes public.
+- **The built-in planner's walks are estimates** (straight line × 1.3), so it can
+  be a few minutes optimistic where the real walk is long or goes round a station;
+  it has no step-free routing. OpenTripPlanner fixes both where there's memory for it.
 
 ## Privacy
 
@@ -312,5 +368,38 @@ or stored there.
 
 ## Data and attribution
 
-Data from the MBTA under the MassDOT Developers License Agreement. T-Walk is
-not affiliated with the MBTA.
+Transit data is provided by **MassDOT and the MBTA** under the
+[MassDOT Developers License Agreement](https://github.com/mbta/gtfs-documentation/blob/master/developers-license-agreement.pdf).
+Its terms apply to anyone running T-Walk:
+- acknowledge MassDOT as the provider of the data (the app's footer does);
+- don't present your site as MassDOT's or the MBTA's, or as their partner;
+- don't use their logos or trademarks;
+- don't misrepresent the data or claim to own it.
+
+The data comes "as is", with no guarantee it is accurate or available. T-Walk is
+not affiliated with or endorsed by MassDOT or the MBTA.
+
+Other sources:
+- Map tiles: [OpenFreeMap](https://openfreemap.org), © OpenMapTiles, data © OpenStreetMap contributors.
+- Address search: [Photon](https://photon.komoot.io) by komoot, data © OpenStreetMap contributors.
+- Bluebikes: Lyft's public GBFS feed.
+- Weather in notifications: the US National Weather Service (api.weather.gov).
+- Trip planning (optional): [OpenTripPlanner](https://www.opentripplanner.org), LGPL-3.0, run as a separate program.
+
+The fixtures in `fixtures/` are made up.
+
+## Contributing
+
+Issues and pull requests are welcome. Before sending one:
+
+```bash
+npm run typecheck && npm run lint && npm test && npm run test:e2e
+```
+
+Keep new code in the style of the files around it, and keep times honest: every
+time shown must say whether it's live, an estimate or scheduled.
+
+## License
+
+T-Walk's code is released under the [MIT License](LICENSE). The MIT license covers
+the code only, not the MBTA data it downloads (see above).

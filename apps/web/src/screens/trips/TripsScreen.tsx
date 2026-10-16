@@ -121,7 +121,7 @@ export default function TripsScreen({ path }: { path: string }) {
       .catch((e: unknown) => {
         if ((e as Error).name === 'AbortError') return;
         setState('error');
-        setError(String((e as Error).message).includes('503') ? "The trip planner isn't available right now. Try again in a minute." : "Couldn't plan that trip. Check your connection.");
+        setError(String((e as Error).message).includes('503') ? 'Trip planning is offline right now. Live departures and the map still work.' : "Couldn't plan that trip. Check your connection.");
       });
     return () => ac.abort();
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps

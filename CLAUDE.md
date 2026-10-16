@@ -10,6 +10,12 @@ Live MBTA departures by walking time. npm workspaces: `packages/core`, `apps/ser
 Phases 1-5 done (see README.md). Phase 6 done (history model, server recording, planner wiring, "usually runs N min late" text, README note). Next: no phase planned; pick polish or new scope with the user.
 
 ## Change log (newest first)
+- 2026-10-16: Built-in trip planner, open source, Oracle guide.
+  - `packages/core/src/raptor.ts` (RAPTOR) and `timetable.ts` (compact layout); `apps/server/src/plan/timetable.ts` builds it from the imported GTFS; `plan/builtin.ts` turns journeys into TripOptions (GTFS shapes, ride stops, live labels, fares, risk).
+  - `Planner.plan` uses OTP when `OTP_URL` answers, else the built-in planner; `OTP_URL=off` skips OTP. `planner.warm()` builds today's timetable at start-up.
+  - On 15 real Boston trips: median 2 min from OTP, worst 9 (`tools/compare-planners.ts`).
+  - `deploy/oracle/` (setup.sh, update.sh, t-walk.service) and `docs/deploy-oracle.md`. MIT `LICENSE`; README rewritten for public use; footer names MassDOT as the data provider (license 4.1). `E2E_PORT` moves the e2e servers.
+  - typecheck and lint clean; 214 unit and 23 e2e tests pass.
 - 2026-10-16 (hourly run 9): Verified commit ac90ed3 (typecheck, lint, 193 unit, 23 e2e clean). Documented `GET /api/history/summary` in the README Transfer-risk note. No code change.
 - 2026-10-16 (hourly run 8): Verified commit 45d909b (typecheck, lint, 192 unit, 23 e2e clean). Added the HTTP test for `GET /api/history/summary` (200 with counts when `history` is passed, 404 otherwise) in `tests/history.test.ts`. Now 193 unit, 23 e2e pass.
 - 2026-10-16 (hourly run 7): Verified commit d5d98bc (typecheck, lint, 191 unit, 23 e2e clean). Added the debug count of history samples: `ArrivalHistory.summary()` ({pairs, samples, usable}) and `GET /api/history/summary` (only when `history` is passed to `buildApp`; `main.ts` does). New test. Now 192 unit, 23 e2e pass.

@@ -269,7 +269,7 @@ export default function NowScreen() {
 
       <footer className="text-muted mt-8 space-y-1 text-xs">
         <p>Walking times are estimates from straight-line distance. "Live" times are MBTA predictions; "Scheduled" times are not live.</p>
-        <p>Data from the MBTA (MassDOT Developers License). T-Walk is not affiliated with the MBTA.</p>
+        <p>Transit data provided by MassDOT and the MBTA under the MassDOT Developers License Agreement. T-Walk is not affiliated with or endorsed by MassDOT or the MBTA.</p>
       </footer>
     </main>
     </>

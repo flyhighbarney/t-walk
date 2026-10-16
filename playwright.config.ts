@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// E2E_PORT moves all three servers (normal, outage, stand-in OTP) when 8790-8792 are taken.
+const PORT = Number(process.env.E2E_PORT ?? 8790);
+
 // Two servers on recorded scenarios (made-up data, fixed clock): normal service
 // and a stream outage. Each serves the built web app (npm run build first).
 const server = (port: number, scenario: string, fakeNow: string) => ({
@@ -16,8 +19,8 @@ const server = (port: number, scenario: string, fakeNow: string) => ({
     FAKE_NOW: fakeNow,
     MBTA_API_KEY: '',
     // A stand-in OpenTripPlanner and Photon (tools/fake-otp.ts).
-    OTP_URL: 'http://127.0.0.1:8792',
-    PHOTON_URL: 'http://127.0.0.1:8792/api/',
+    OTP_URL: `http://127.0.0.1:${PORT + 2}`,
+    PHOTON_URL: `http://127.0.0.1:${PORT + 2}/api/`,
   },
 });
 
@@ -28,13 +31,13 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     ...devices['Pixel 7'],
-    baseURL: 'http://127.0.0.1:8790',
+    baseURL: `http://127.0.0.1:${PORT}`,
     timezoneId: 'America/New_York',
     locale: 'en-US',
   },
   webServer: [
-    { command: 'node tools/fake-otp.ts 8792', port: 8792, reuseExistingServer: false, timeout: 20_000 },
-    server(8790, 'normal', '2026-10-15T08:00:00-04:00'),
-    server(8791, 'outage', '2026-10-15T08:05:00-04:00'),
+    { command: `node tools/fake-otp.ts ${PORT + 2}`, port: PORT + 2, reuseExistingServer: false, timeout: 20_000 },
+    server(PORT, 'normal', '2026-10-15T08:00:00-04:00'),
+    server(PORT + 1, 'outage', '2026-10-15T08:05:00-04:00'),
   ],
 });

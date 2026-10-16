@@ -1,6 +1,7 @@
 // Read-only queries over the imported GTFS database.
 
 import { DatabaseSync, type StatementSync } from 'node:sqlite';
+import { Timetable } from '../plan/timetable.ts';
 import {
   activeServiceIds,
   addDays,
@@ -100,6 +101,27 @@ export class GtfsDb {
 
   close(): void {
     this.db.close();
+  }
+
+  private timetableCache: Timetable | null = null;
+
+  /** The built-in planner's timetable (plan/timetable.ts), made on first use. */
+  timetable(): Timetable {
+    this.timetableCache ??= new Timetable(this.db, this.feedVersion ?? 'unknown');
+    return this.timetableCache;
+  }
+
+  private shapeCache = new Map<string, [number, number][]>();
+
+  /** A GTFS shape's points as [lon, lat]. */
+  shapeCoords(shapeId: string): [number, number][] {
+    let c = this.shapeCache.get(shapeId);
+    if (!c) {
+      c = (this.db.prepare('SELECT lon, lat FROM shapes WHERE shape_id = ? ORDER BY seq').all(shapeId) as { lon: number; lat: number }[]).map((r) => [r.lon, r.lat]);
+      if (this.shapeCache.size > 500) this.shapeCache.clear();
+      this.shapeCache.set(shapeId, c);
+    }
+    return c;
   }
 
   private loadRoutes(): Map<string, RouteInfo> {
