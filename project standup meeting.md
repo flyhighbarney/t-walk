@@ -1,5 +1,12 @@
 # T-Walk standup log
 
+## 2026-10-16 (hourly run 8)
+- **Verified:** commit 45d909b: typecheck, lint, 192 unit and 23 e2e pass.
+- **Done:** HTTP test for `/api/history/summary` (counts with history, 404 without).
+- **After:** 193 unit and 23 e2e pass, typecheck and lint clean.
+- **Next:** no phase planned. Candidates: screen reader pass, check recorded delays after days of live running.
+- **Not verified:** history with real MBTA data, screen reader pass, real-device touch/compass, long stop names on Map sheets.
+
 ## 2026-10-16 (hourly run 7)
 - **Verified:** on d5d98bc, typecheck, lint, 191 unit and 23 e2e pass.
 - **Done:** debug count of history samples: `ArrivalHistory.summary()` and `GET /api/history/summary` returning pairs, samples and usable pairs (8+ samples). Wired in `main.ts`. New unit test.

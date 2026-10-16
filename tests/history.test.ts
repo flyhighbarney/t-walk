@@ -86,3 +86,20 @@ describe('ArrivalHistory.summary', () => {
   });
 
 });
+
+describe('GET /api/history/summary', () => {
+  it('returns the counts when history is passed, and 404 when it is not', async () => {
+    const { ArrivalHistory } = await import('@twalk/core');
+    const { buildApp } = await import('../apps/server/src/api/app.ts');
+    const { stack } = await import('./helpers.ts');
+    const base = await stack({ start: Date.UTC(2026, 0, 5, 15) });
+    const history = new ArrivalHistory();
+    history.record({ routeId: 'Red', stopId: 'a' }, { delayS: 60, at: 1 });
+    const app = await buildApp({ getDb: () => base.db, boards: base.boards, store: base.store, ingest: base.ingest, clock: base.clock, history });
+    const res = await app.inject({ url: '/api/history/summary' });
+    expect(res.json()).toEqual({ pairs: 1, samples: 1, usable: 0 });
+    expect((await base.app.inject({ url: '/api/history/summary' })).statusCode).toBe(404);
+    await app.close();
+    await base.app.close();
+  });
+});
