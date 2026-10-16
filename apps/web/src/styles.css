@@ -26,19 +26,20 @@
   /* The green accent: fills, and text on surfaces. */
   --accent: #12b76a;
   --accent-text: #006d3c;
-  --ok-fg: #0d6b35;
-  --ok-bg: #dcf5e6;
-  --hurry-fg: #7f4a00;
-  --hurry-bg: #fff0d1;
-  --miss-fg: #a3231b;
-  --miss-bg: #fde6e3;
-  --warn-fg: #6e4600;
-  --warn-bg: #fff3d2;
+  /* Banners and status chips are solid: green, amber or red, with black or white text. */
+  --ok-fg: #0a0a0a;
+  --ok-bg: #12b76a;
+  --hurry-fg: #0a0a0a;
+  --hurry-bg: #f59e0b;
+  --miss-fg: #ffffff;
+  --miss-bg: #c62828;
+  --warn-fg: #0a0a0a;
+  --warn-bg: #f59e0b;
   /* Warning and error text on ordinary surfaces (the -fg colours are for their own chips). */
   --warn-text: #6e4600;
   --miss-text: #a3231b;
   --down-fg: #ffffff;
-  --down-bg: #8a2d22;
+  --down-bg: #c62828;
   --star: #0a0a0a;
   --chrome: rgb(255 255 255 / 0.94);
   --shadow: 0 6px 24px rgb(0 0 0 / 0.12);
@@ -60,19 +61,18 @@
     --live: #51df8e;
     --accent: #12b76a;
     --accent-text: #51df8e;
-    /* Status chips stay light in dark mode, as in the design. */
-    --ok-fg: #0d6b35;
-    --ok-bg: #dcf5e6;
-    --hurry-fg: #7f4a00;
-    --hurry-bg: #fff0d1;
-    --miss-fg: #a3231b;
-    --miss-bg: #fde6e3;
-    --warn-fg: #5c3a00;
-    --warn-bg: #fff1c9;
+    --ok-fg: #0a0a0a;
+    --ok-bg: #12b76a;
+    --hurry-fg: #0a0a0a;
+    --hurry-bg: #f59e0b;
+    --miss-fg: #ffffff;
+    --miss-bg: #c62828;
+    --warn-fg: #0a0a0a;
+    --warn-bg: #f59e0b;
     --warn-text: #ffc15a;
     --miss-text: #ffb4ab;
-    --down-fg: #ffdad6;
-    --down-bg: #93000a;
+    --down-fg: #ffffff;
+    --down-bg: #c62828;
     --star: #fafafa;
     --chrome: rgb(10 10 10 / 0.9);
     --shadow: 0 8px 28px rgb(0 0 0 / 0.5);

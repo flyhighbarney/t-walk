@@ -213,7 +213,7 @@ export default function TripsScreen({ path }: { path: string }) {
               </p>
             ) : null}
             {safer ? (
-              <button type="button" onClick={() => setOpenId(safer.id)} className="bg-ok-bg text-ok-fg mt-2 w-full rounded-xl p-2 text-left text-sm font-semibold">
+              <button type="button" onClick={() => setOpenId(safer.id)} className="bg-surface-2 text-text mt-2 w-full rounded-xl p-3 text-left text-sm font-semibold">
                 Safer: arrive {clock(safer.end)} ({Math.round((safer.end - open.end) / 60_000)} min later) with {RISK_LABEL[safer.risk.level].toLowerCase()}. Show it
               </button>
             ) : null}

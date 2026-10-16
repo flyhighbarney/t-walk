@@ -300,7 +300,7 @@ function Navigator({ session, onChange }: { session: GoSession; onChange: (s: Go
               Done
             </button>
           ) : (
-            <button type="button" onClick={end} className="bg-miss-bg text-miss-fg min-h-12 rounded-full px-6 font-bold">
+            <button type="button" onClick={end} className="bg-surface-2 text-text min-h-12 rounded-full px-6 font-bold">
               End
             </button>
           )}
