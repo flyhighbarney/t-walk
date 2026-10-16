@@ -140,7 +140,7 @@ function Row(props: {
           {notes.map((n) => (
             <span
               key={n}
-              className={`inline-flex items-center gap-1 text-xs ${r.mayNotRun || r.canceled || r.stalled ? 'text-warn-fg font-semibold' : 'text-muted'}`}
+              className={`inline-flex items-center gap-1 text-xs ${r.mayNotRun || r.canceled || r.stalled ? 'text-warn-text font-semibold' : 'text-muted'}`}
             >
               {r.mayNotRun || r.stalled ? <WarnIcon /> : null}
               {n}
@@ -184,7 +184,7 @@ export function DepartureGroupView(props: {
         </span>
       </h3>
       {g.liveUnavailable ? (
-        <p className="text-warn-fg mt-1 text-xs font-semibold">Live times unavailable: showing the schedule</p>
+        <p className="text-warn-text mt-1 text-xs font-semibold">Live times unavailable: showing the schedule</p>
       ) : null}
       {g.headway && visible.length === 0 ? (
         <p className="mt-1 text-sm">
@@ -203,7 +203,7 @@ export function DepartureGroupView(props: {
         </ul>
       ) : null}
       {age != null && stale ? (
-        <p className={`mt-1 text-xs ${veryOld ? 'text-warn-fg font-semibold' : 'text-muted'}`} role={veryOld ? 'status' : undefined}>
+        <p className={`mt-1 text-xs ${veryOld ? 'text-warn-text font-semibold' : 'text-muted'}`} role={veryOld ? 'status' : undefined}>
           {veryOld ? `Out of date: ${formatAge(age)}` : formatAge(age)}
         </p>
       ) : null}

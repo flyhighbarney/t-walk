@@ -210,7 +210,7 @@ function CommuteCard({ c, onEdit }: { c: Commute; onEdit: () => void }) {
               setServerId(c.id, null);
               remove(c.id);
             }}
-            className="text-miss-fg min-h-11 text-sm font-bold"
+            className="text-miss-text min-h-11 text-sm font-bold"
           >
             Delete
           </button>
@@ -278,7 +278,7 @@ function CommuteForm({ initial, onDone }: { initial: Commute | null; onDone: () 
   return (
     <section aria-label={initial ? 'Edit commute' : 'New commute'} className="bg-surface space-y-3 rounded-2xl p-4">
       <div>
-        <label htmlFor={nameId} className="text-muted mb-1 block text-xs font-bold tracking-widest uppercase">
+        <label htmlFor={nameId} className="text-muted mb-1 block text-sm font-semibold">
           Name
         </label>
         <input id={nameId} value={name} onChange={(e) => setName(e.target.value)} maxLength={60} className="bg-surface-2 min-h-12 w-full rounded-xl px-3" />
@@ -286,7 +286,7 @@ function CommuteForm({ initial, onDone }: { initial: Commute | null; onDone: () 
       <PlaceField label="From" value={from} onChange={setFrom} here={null} onUseHere={() => setError('Pick a fixed place for a commute (home, work…).')} />
       <PlaceField label="To" value={to} onChange={setTo} here={null} onUseHere={() => setError('Pick a fixed place for a commute (home, work…).')} />
       <fieldset>
-        <legend className="text-muted mb-1 text-xs font-bold tracking-widest uppercase">When</legend>
+        <legend className="text-muted mb-1 text-sm font-semibold">When</legend>
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-surface-2 grid grid-cols-2 gap-1 rounded-xl p-1">
             {(
@@ -308,7 +308,7 @@ function CommuteForm({ initial, onDone }: { initial: Commute | null; onDone: () 
         </div>
       </fieldset>
       <fieldset>
-        <legend className="text-muted mb-1 text-xs font-bold tracking-widest uppercase">Days</legend>
+        <legend className="text-muted mb-1 text-sm font-semibold">Days</legend>
         <div className="flex flex-wrap gap-1.5">
           {DAY_LETTERS.map((d, i) => (
             <label key={d} className="relative">
@@ -328,7 +328,7 @@ function CommuteForm({ initial, onDone }: { initial: Commute | null; onDone: () 
         <span className="font-bold">Step-free</span>
       </label>
       {error ? (
-        <p role="alert" className="text-miss-fg flex items-center gap-1 text-sm">
+        <p role="alert" className="text-miss-text flex items-center gap-1 text-sm">
           <WarnIcon /> {error}
         </p>
       ) : null}
@@ -350,7 +350,7 @@ export function CommutesSection() {
   return (
     <section aria-labelledby="commutes-h" className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 id="commutes-h" className="text-muted text-sm font-semibold tracking-wide uppercase">
+        <h2 id="commutes-h" className="text-lg font-bold">
           Commutes
         </h2>
         {!editing ? (

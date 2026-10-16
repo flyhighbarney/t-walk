@@ -46,7 +46,7 @@ export default function ShareScreen({ path }: { path: string }) {
   const quiet = view ? (now - view.updatedAt) / 1000 : 0;
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 px-6">
-      <p className="text-brand-text text-sm font-bold tracking-widest uppercase">T-Walk · shared trip</p>
+      <p className="text-brand-text text-sm font-bold">T-Walk · shared trip</p>
       {state === 'loading' ? <p className="text-muted">Loading…</p> : null}
       {state === 'ended' ? (
         <>

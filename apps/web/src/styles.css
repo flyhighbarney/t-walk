@@ -28,6 +28,9 @@
   --miss-bg: #fde6e3;
   --warn-fg: #6e4600;
   --warn-bg: #fff3d2;
+  /* Warning and error text on ordinary surfaces (the -fg colours are for their own chips). */
+  --warn-text: #6e4600;
+  --miss-text: #a3231b;
   --down-fg: #ffffff;
   --down-bg: #8a2d22;
   --star: #9a5400;
@@ -59,6 +62,8 @@
     --miss-bg: #fde6e3;
     --warn-fg: #5c3a00;
     --warn-bg: #fff1c9;
+    --warn-text: #ffc15a;
+    --miss-text: #ffb4ab;
     --down-fg: #ffdad6;
     --down-bg: #93000a;
     --star: #ffc15a;
@@ -88,6 +93,8 @@
   --color-miss-bg: var(--miss-bg);
   --color-warn-fg: var(--warn-fg);
   --color-warn-bg: var(--warn-bg);
+  --color-warn-text: var(--warn-text);
+  --color-miss-text: var(--miss-text);
   --color-down-fg: var(--down-fg);
   --color-down-bg: var(--down-bg);
   --color-chrome: var(--chrome);
@@ -122,6 +129,11 @@ body {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* A sideways-scrolling row fades out at its right edge: there's more. */
+.edge-fade {
+  mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
 }
 
 .shadow-float {

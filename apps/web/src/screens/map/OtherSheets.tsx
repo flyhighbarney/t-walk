@@ -14,7 +14,7 @@ import {
   type StopResponse,
   type WalkPace,
 } from '@twalk/core';
-import { BikeIcon, BusIcon, FerryIcon, TrainIcon } from '../../components/icons.tsx';
+import { BikeIcon, BusIcon, FerryIcon, StarIcon, TrainIcon } from '../../components/icons.tsx';
 import { StopCard } from '../../components/StopCard.tsx';
 import { chipColors } from '../../components/RouteChip.tsx';
 import { fetchStop } from '../../lib/api.ts';
@@ -66,13 +66,30 @@ export function StopSheet(props: {
     .filter((r): r is RouteInfo => r != null);
 
   return (
-    <BottomSheet title={stop?.name ?? 'Stop'} label={stop?.name ?? 'Stop'} onClose={props.onClose}>
-      {error ? <p className="text-miss-fg text-sm">Couldn't load this stop. Try again in a moment.</p> : null}
+    <BottomSheet
+      title={stop?.name ?? 'Stop'}
+      label={stop?.name ?? 'Stop'}
+      onClose={props.onClose}
+      actions={
+        stop ? (
+          <button
+            type="button"
+            onClick={() => props.onTogglePin(stop.id)}
+            aria-pressed={props.pinned}
+            aria-label={props.pinned ? `Unpin ${stop.name}` : `Pin ${stop.name}`}
+            className={`bg-surface-2 flex size-11 items-center justify-center rounded-full ${props.pinned ? 'text-star' : 'text-muted'}`}
+          >
+            <StarIcon filled={props.pinned} />
+          </button>
+        ) : null
+      }
+    >
+      {error ? <p className="text-miss-text text-sm">Couldn't load this stop. Try again in a moment.</p> : null}
       {!stop && !error ? <p className="text-muted text-sm">Loading departures…</p> : null}
       {stop ? (
         <>
           {lineRoutes.length > 1 ? (
-            <div role="group" aria-label="Show lines" className="no-scrollbar -mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
+            <div role="group" aria-label="Show lines" className="no-scrollbar edge-fade -mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
               <FilterChip active={filter == null} onClick={() => setFilter(null)}>
                 All departures
               </FilterChip>
@@ -98,6 +115,7 @@ export function StopSheet(props: {
               showMapLink={false}
               routeFilter={filter}
               hideName
+              hidePin
               alerts={stop ? alerts.get(stop.id) : undefined}
               stepFree={stepFree}
             />
@@ -114,7 +132,7 @@ export function FilterChip({ active, onClick, children }: { active: boolean; onC
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-bold ${active ? 'bg-brand text-on-brand' : 'bg-surface-2 text-text'}`}
+      className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-bold ${active ? 'bg-brand text-on-brand' : 'bg-surface-2 text-text'}`}
     >
       {children}
     </button>
@@ -130,8 +148,8 @@ export function BikeSheet({ station, updatedAt, onClose }: { station: BikeStatio
         <Stat label="Bikes" value={station.bikes} note={station.ebikes > 0 ? `${station.ebikes} electric` : undefined} />
         <Stat label="Open docks" value={station.docks} />
       </div>
-      {!station.renting ? <p className="text-warn-fg mt-3 text-sm font-semibold">Not renting bikes right now.</p> : null}
-      {!station.returning ? <p className="text-warn-fg mt-1 text-sm font-semibold">Not taking returns right now.</p> : null}
+      {!station.renting ? <p className="text-warn-text mt-3 text-sm font-semibold">Not renting bikes right now.</p> : null}
+      {!station.returning ? <p className="text-warn-text mt-1 text-sm font-semibold">Not taking returns right now.</p> : null}
       <p className="text-muted mt-3 text-sm">
         <span style={{ color: BIKE_COLOR }}>
           <BikeIcon className="mr-1 inline size-4" />
@@ -145,7 +163,7 @@ export function BikeSheet({ station, updatedAt, onClose }: { station: BikeStatio
 function Stat({ label, value, note }: { label: string; value: number; note?: string }) {
   return (
     <div className="bg-surface-2 rounded-2xl p-3">
-      <div className="text-muted text-xs font-bold tracking-widest uppercase">{label}</div>
+      <div className="text-muted text-sm font-semibold">{label}</div>
       <div className="tabular text-3xl font-extrabold">{value}</div>
       {note ? <div className="text-muted text-xs">{note}</div> : null}
     </div>
@@ -201,7 +219,7 @@ export function InViewSheet(props: {
   const stations = [...props.stations].sort((a, b) => near(a.latitude, a.longitude) - near(b.latitude, b.longitude)).slice(0, 20);
   return (
     <BottomSheet title="In view" label="Vehicles and stations in view" onClose={props.onClose}>
-      <h3 className="text-muted mb-2 text-xs font-bold tracking-widest uppercase">Stations</h3>
+      <h3 className="mb-2 text-base font-bold">Stations</h3>
       {stations.length === 0 ? <p className="text-muted mb-4 text-sm">No stations in view.</p> : null}
       <ul className="mb-5 space-y-2">
         {stations.map((s) => (
@@ -213,7 +231,7 @@ export function InViewSheet(props: {
           </li>
         ))}
       </ul>
-      <h3 className="text-muted mb-2 text-xs font-bold tracking-widest uppercase">Vehicles, nearest first</h3>
+      <h3 className="mb-2 text-base font-bold">Vehicles, nearest first</h3>
       {vehicles.length === 0 ? <p className="text-muted text-sm">No vehicles in view.</p> : null}
       <ul className="space-y-2">
         {vehicles.map((v) => {

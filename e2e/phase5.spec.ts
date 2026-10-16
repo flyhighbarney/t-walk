@@ -83,23 +83,43 @@ test('the navigation screen has no axe accessibility violations', async ({ page,
   expect(results.violations).toEqual([]);
 });
 
-test('tapping near a station opens that station, once', async ({ page }) => {
-  await page.goto('/');
-  await page.evaluate(() => localStorage.setItem('twalkDebug', '1'));
-  await page.goto('/map');
+type DebugMap = {
+  project: (ll: number[]) => { x: number; y: number };
+  getCanvas: () => HTMLCanvasElement;
+  querySourceFeatures: (s: string) => { properties: { id: string }; geometry: { coordinates: number[] } }[];
+  loaded: () => boolean;
+  isMoving: () => boolean;
+  setLayoutProperty: (l: string, k: string, v: string) => void;
+};
+
+/** Where to tap, a finger's width (12 px) off Park Street's ring, once the map has settled. */
+async function nearParkStreet(page: import('@playwright/test').Page) {
   await page.waitForFunction(() => {
-    const m = (window as unknown as { twalkMap?: { querySourceFeatures: (s: string) => unknown[] } }).twalkMap;
-    return m != null && m.querySourceFeatures('stations').length > 0;
+    const m = (window as unknown as { twalkMap?: DebugMap }).twalkMap;
+    return m != null && m.loaded() && !m.isMoving() && m.querySourceFeatures('stations').length > 0;
   });
-  // A finger's width (12 px) off the ring still counts.
-  const point = await page.evaluate(() => {
-    type M = { project: (ll: number[]) => { x: number; y: number }; getCanvas: () => HTMLCanvasElement; querySourceFeatures: (s: string) => { properties: { id: string }; geometry: { coordinates: number[] } }[] };
-    const m = (window as unknown as { twalkMap: M }).twalkMap;
+  return page.evaluate(() => {
+    const m = (window as unknown as { twalkMap: DebugMap }).twalkMap;
     const f = m.querySourceFeatures('stations').find((x) => x.properties.id === 'place-pktrm')!;
     const p = m.project(f.geometry.coordinates);
     const r = m.getCanvas().getBoundingClientRect();
     return { x: r.left + p.x + 12, y: r.top + p.y + 12 };
   });
+}
+
+test('one tap opens one thing: the vehicle on top, else the station', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('twalkDebug', '1'));
+  await page.goto('/map');
+  // The replay has train R-1 standing at Park Street: its icon is on top, so it wins.
+  let point = await nearParkStreet(page);
+  await page.mouse.click(point.x, point.y);
+  await expect(page).toHaveURL(/vehicle=R-1/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/map$/);
+  // With vehicles hidden, the same spot is the station's. (Selecting the train moved the map: measure again.)
+  await page.evaluate(() => (window as unknown as { twalkMap: DebugMap }).twalkMap.setLayoutProperty('vehicles', 'visibility', 'none'));
+  point = await nearParkStreet(page);
   await page.mouse.click(point.x, point.y);
   await expect(page).toHaveURL(/stop=place-pktrm/);
   await expect(page.getByRole('dialog')).toContainText('Park Street');

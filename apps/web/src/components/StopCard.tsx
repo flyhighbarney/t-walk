@@ -21,6 +21,8 @@ export function StopCard(props: {
   routeFilter?: string | null;
   /** The sheet around it already shows the name. */
   hideName?: boolean;
+  /** The sheet around it has its own pin button. */
+  hidePin?: boolean;
   alerts?: AlertView[];
   stepFree?: boolean;
 }) {
@@ -30,6 +32,11 @@ export function StopCard(props: {
   const groups = board?.groups.filter((g) => !props.routeFilter || g.routeId === props.routeFilter) ?? [];
   return (
     <article aria-labelledby={headingId} className="bg-surface rounded-2xl p-4">
+      {props.hideName && props.hidePin ? (
+        <h2 id={headingId} className="visually-hidden">
+          {stop.name}
+        </h2>
+      ) : (
       <header className="mb-3 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h2 id={headingId} className={props.hideName ? 'visually-hidden' : 'flex items-center gap-2 text-2xl leading-tight font-extrabold break-words'}>
@@ -60,6 +67,7 @@ export function StopCard(props: {
           <StarIcon filled={props.pinned} />
         </button>
       </header>
+      )}
       {props.alerts?.length ? (
         <div className="-mt-1 mb-3">
           <AlertList alerts={props.alerts} stepFree={props.stepFree} max={2} />

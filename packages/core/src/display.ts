@@ -107,3 +107,11 @@ export function formatAge(seconds: number): string {
   if (seconds < 90) return `updated ${Math.max(0, Math.round(seconds))}s ago`;
   return `updated ${Math.round(seconds / 60)} min ago`;
 }
+
+/** US units, as Apple and Google Maps use in Boston: feet up to 0.1 mi, then miles. */
+export function formatDistance(m: number): string {
+  const ft = m * 3.28084;
+  if (ft < 528) return `${Math.max(50, Math.round(ft / 50) * 50)} ft`;
+  const mi = m / 1609.344;
+  return `${mi < 10 ? mi.toFixed(1) : Math.round(mi)} mi`;
+}

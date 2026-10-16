@@ -10,6 +10,7 @@ import {
   WALK_SPEED,
   blendSpeed,
   formatClock,
+  formatDistance,
   formatMinutes,
   learnedSpeed,
   lineTitle,
@@ -43,13 +44,6 @@ const GoMap = lazy(() => import('./GoMap.tsx'));
 
 const clock = (ms: number) => formatClock(ms).full;
 
-/** US units, as Apple and Google Maps use in Boston: feet up to 0.1 mi, then miles. */
-export function formatDistance(m: number): string {
-  const ft = m * 3.28084;
-  if (ft < 528) return `${Math.max(50, Math.round(ft / 50) * 50)} ft`;
-  const mi = m / 1609.344;
-  return `${mi < 10 ? mi.toFixed(1) : Math.round(mi)} mi`;
-}
 
 function ManeuverIcon({ m, className }: { m: Maneuver; className?: string }) {
   const paths: Partial<Record<Maneuver, string>> = {
@@ -264,7 +258,7 @@ function Navigator({ session, onChange }: { session: GoSession; onChange: (s: Go
 
       {/* Map controls */}
       <div className="absolute right-3 z-20 flex flex-col gap-2" style={{ bottom: 250 }}>
-        {compass.needsPermission ? (
+        {compass.needsPermission && navigator.maxTouchPoints > 0 ? (
           <button type="button" onClick={compass.request} className="bg-surface-2 shadow-float min-h-12 rounded-full px-4 text-sm font-bold">
             Use compass
           </button>

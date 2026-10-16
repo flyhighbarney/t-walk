@@ -68,7 +68,7 @@ export function PlaceField(props: {
 
   return (
     <div className="relative">
-      <label htmlFor={id} className="text-muted mb-1 block text-xs font-bold tracking-widest uppercase">
+      <label htmlFor={id} className="text-muted mb-1 block text-sm font-semibold">
         {props.label}
       </label>
       {props.value && !open ? (
@@ -88,7 +88,7 @@ export function PlaceField(props: {
             </span>
             {props.value.detail ? <span className="text-muted block truncate text-xs">{props.value.detail}</span> : null}
           </button>
-          <button type="button" aria-label={`Clear ${props.label.toLowerCase()}`} onClick={() => props.onChange(null)} className="flex size-10 items-center justify-center">
+          <button type="button" aria-label={`Clear ${props.label.toLowerCase()}`} onClick={() => props.onChange(null)} className="flex size-11 items-center justify-center">
             <CloseIcon className="size-5" />
           </button>
         </div>

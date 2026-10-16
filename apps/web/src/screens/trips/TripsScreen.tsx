@@ -197,7 +197,7 @@ export default function TripsScreen({ path }: { path: string }) {
         <main className="pb-tabbar mx-auto max-w-xl space-y-4 px-4 pt-2">
           <section aria-labelledby="trip-h" className="bg-surface rounded-2xl p-4">
             <h2 id="trip-h" className="tabular text-2xl font-extrabold">
-              {clock(open.start)} → {clock(open.end)}
+              {clock(open.start)} – {clock(open.end)}
             </h2>
             <p className="text-muted mt-1">
               {minutes(open.durationS)} · {minutes(open.walkS)} walking
@@ -287,7 +287,7 @@ export default function TripsScreen({ path }: { path: string }) {
             <p className="text-muted text-sm">{location.kind === 'denied' ? 'Location is off for this site; choose a place instead.' : 'Finding your location…'}</p>
           ) : null}
           <fieldset>
-            <legend className="text-muted mb-1 text-xs font-bold tracking-widest uppercase">When</legend>
+            <legend className="text-muted mb-1 text-sm font-semibold">When</legend>
             <div className="bg-surface-2 grid grid-cols-3 gap-1 rounded-xl p-1">
               {(
                 [
@@ -324,7 +324,7 @@ export default function TripsScreen({ path }: { path: string }) {
         </section>
 
         {input ? (
-          <div role="group" aria-label="Sort trips" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
+          <div role="group" aria-label="Sort trips" className="no-scrollbar edge-fade -mx-4 flex gap-2 overflow-x-auto px-4">
             {SORTS.map((s) => (
               <FilterChip key={s.value} active={sort === s.value} onClick={() => setSort(s.value)}>
                 {s.label}

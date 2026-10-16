@@ -56,7 +56,7 @@ export default function SavedScreen() {
       <main className="pb-tabbar mx-auto max-w-xl space-y-4 px-4 pt-2">
         <StatusBanner status={live.status} connection={live.connection} lastMessageAt={live.lastMessageAt} offline={offline ? { savedAt: pack?.generatedAt ?? null } : null} />
         <CommutesSection />
-        <h2 className="text-muted text-sm font-semibold tracking-wide uppercase">Saved stops</h2>
+        <h2 className="text-lg font-bold">Saved stops</h2>
         {pins.length === 0 ? (
           <div className="bg-surface rounded-2xl p-5 text-center">
             <StarIcon filled={false} className="text-star mx-auto mb-2 size-8" />

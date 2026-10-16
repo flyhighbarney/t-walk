@@ -47,7 +47,7 @@ export function StopSearch({ onPick }: { onPick: (stop: StopSummary) => void }) 
       <div role="status" aria-live="polite" className="visually-hidden">
         {q.trim().length >= 2 ? `${results.length} stops found` : ''}
       </div>
-      {error ? <p className="text-miss-fg mt-2 text-sm">Couldn't search right now. Try again in a moment.</p> : null}
+      {error ? <p className="text-miss-text mt-2 text-sm">Couldn't search right now. Try again in a moment.</p> : null}
       {results.length > 0 ? (
         <ul className="bg-surface border-line divide-line mt-2 divide-y rounded-xl border">
           {results.map((s) => (

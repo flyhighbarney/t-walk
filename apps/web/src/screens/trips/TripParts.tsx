@@ -6,6 +6,7 @@ import {
   bestTime,
   describeTransfer,
   formatClock,
+  formatDistance,
   formatMinutes,
   type RiskLevel,
   type TripLeg,
@@ -87,11 +88,11 @@ export function TripCard({ option, onOpen, tag }: { option: TripOption; onOpen: 
       <span aria-hidden className="block">
         <span className="flex items-baseline justify-between gap-2">
           <span className="tabular text-xl font-extrabold">
-            {clock(option.start)} → {clock(option.end)}
+            {clock(option.start)} – {clock(option.end)}
           </span>
           <span className="tabular text-lg font-bold">{minutes(option.durationS)}</span>
         </span>
-        {tag ? <span className="text-brand-text mt-0.5 block text-xs font-bold tracking-widest uppercase">{tag}</span> : null}
+        {tag ? <span className="bg-surface-2 text-brand-text mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-bold">{tag}</span> : null}
         {option.alsoAt.length > 0 ? <span className="text-muted mt-0.5 block text-sm">Also at {option.alsoAt.map(clock).join(', ')}</span> : null}
         <span className="mt-2 flex flex-wrap items-center gap-1.5">
           {option.legs.map((l, i) => (
@@ -132,7 +133,7 @@ export function LegView({ leg, next, transfer, onMissed }: { leg: TripLeg; next?
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-bold">
-            Walk {minutes(leg.durationS)} <span className="text-muted font-normal">({Math.round(leg.distanceM)} m)</span>
+            Walk {minutes(leg.durationS)} <span className="text-muted font-normal">({formatDistance(leg.distanceM)})</span>
           </p>
           <p className="text-muted text-sm">to {next?.transit ? next.from.name : leg.to.name}</p>
           {transfer ? <p className="text-muted mt-1 text-xs">{transfer}</p> : null}
@@ -177,7 +178,7 @@ export function LegView({ leg, next, transfer, onMissed }: { leg: TripLeg; next?
         </p>
         <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm">
           <SourceTag source={leg.source} />
-          {late >= 2 ? <span className="text-warn-fg font-semibold">{late} min late</span> : null}
+          {late >= 2 ? <span className="text-warn-text font-semibold">{late} min late</span> : null}
         </p>
         {leg.stayOn ? <p className="text-brand-text mt-1 text-sm font-semibold">Stay on board: the same vehicle continues</p> : null}
         <p className="text-muted mt-1 text-sm">{leg.stopsBetween > 0 ? `Ride ${leg.stopsBetween + 1} stops` : 'Ride 1 stop'}</p>

@@ -84,6 +84,8 @@ export default function GoMap(props: GoMapProps) {
       mapRef.current = m;
       m.on('load', () => {
         muteBasemap(m, dark);
+        // Attribution starts folded to its (i) button, so it doesn't cover the map.
+        el.current?.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
         m.addSource('trip', { type: 'geojson', data: features(props.option, props.legIndex, dark) });
         m.addLayer({ id: 'trip-casing', type: 'line', source: 'trip', filter: ['!', ['get', 'walk']], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': dark ? '#04101f' : '#ffffff', 'line-width': 11 } });
         m.addLayer({ id: 'trip-ride', type: 'line', source: 'trip', filter: ['!', ['get', 'walk']], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': 7 } });

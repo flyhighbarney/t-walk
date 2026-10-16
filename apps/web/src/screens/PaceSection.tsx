@@ -16,10 +16,12 @@ export function PaceSection() {
   const [pace, setPace] = useWalkPace();
   const suggested = learned != null ? nearestPace(learned) : null;
   return (
-    <section aria-labelledby="pace-h" className="bg-surface space-y-3 rounded-2xl p-4">
+    <section aria-labelledby="pace-h" className="space-y-2">
+      {/* Heading above the card, like the other sections on Saved. */}
       <h2 id="pace-h" className="text-lg font-bold">
-        Your walking pace
+        Walking pace
       </h2>
+      <div className="bg-surface space-y-3 rounded-2xl p-4">
       <label className="flex min-h-12 cursor-pointer items-center gap-3">
         <span className="flex-1">
           <span className="block font-bold">Learn it from my walks</span>
@@ -48,6 +50,7 @@ export function PaceSection() {
       ) : learn ? (
         <p className="text-muted text-sm">Nothing measured yet. It needs about a quarter mile of walking with a good GPS signal.</p>
       ) : null}
+      </div>
     </section>
   );
 }

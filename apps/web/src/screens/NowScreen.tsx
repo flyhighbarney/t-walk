@@ -41,7 +41,7 @@ function PacePicker({ pace, onChange }: { pace: WalkPace; onChange: (p: WalkPace
   return (
     <fieldset className="bg-surface rounded-2xl p-3">
       <legend className="visually-hidden">Your walking pace</legend>
-      <p className="text-muted mb-2 flex items-center gap-2 px-1 text-xs font-bold tracking-widest uppercase" aria-hidden>
+      <p className="mb-2 flex items-center gap-2 px-1 text-base font-bold" aria-hidden>
         <WalkIcon className="text-brand-text" /> Your walking pace
       </p>
       <div className="bg-surface-2 grid grid-cols-3 gap-1 rounded-xl p-1">
@@ -242,7 +242,7 @@ export default function NowScreen() {
 
         {pinnedStops.length > 0 ? (
           <section aria-labelledby="pins-h" className="space-y-3">
-            <h2 id="pins-h" className="text-muted text-sm font-semibold tracking-wide uppercase">
+            <h2 id="pins-h" className="text-lg font-bold">
               Your stops
             </h2>
             {pinnedStops.map((s) => {
@@ -253,11 +253,11 @@ export default function NowScreen() {
         ) : null}
 
         {optIn && location.kind === 'locating' && !nearby ? <p className="text-muted">Finding your location…</p> : null}
-        {nearbyError && !offline ? <p className="text-miss-fg text-sm">Couldn't load nearby stops. Check your connection; T-Walk will keep trying.</p> : null}
+        {nearbyError && !offline ? <p className="text-miss-text text-sm">Couldn't load nearby stops. Check your connection; T-Walk will keep trying.</p> : null}
 
         {nearbyStops.length > 0 ? (
           <section aria-labelledby="near-h" className="space-y-3">
-            <h2 id="near-h" className="text-muted text-sm font-semibold tracking-wide uppercase">
+            <h2 id="near-h" className="text-lg font-bold">
               Near you, by walking time
             </h2>
             {nearbyStops.map((s) => card(s, s.walk, s.entranceName))}

@@ -5,7 +5,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { CloseIcon } from '../../components/icons.tsx';
 
-export function BottomSheet(props: { title: ReactNode; label: string; onClose: () => void; children: ReactNode; header?: ReactNode }) {
+export function BottomSheet(props: { title: ReactNode; label: string; onClose: () => void; children: ReactNode; header?: ReactNode; actions?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const opener = useRef<Element | null>(null);
   const titleId = useId();
@@ -51,14 +51,12 @@ export function BottomSheet(props: { title: ReactNode; label: string; onClose: (
         <h2 id={titleId} className="min-w-0 text-2xl leading-tight font-extrabold break-words">
           {props.title}
         </h2>
-        <button
-          type="button"
-          onClick={props.onClose}
-          aria-label="Close"
-          className="bg-surface-2 flex size-11 shrink-0 items-center justify-center rounded-full"
-        >
-          <CloseIcon />
-        </button>
+        <div className="flex shrink-0 gap-2">
+          {props.actions}
+          <button type="button" onClick={props.onClose} aria-label="Close" className="bg-surface-2 flex size-11 items-center justify-center rounded-full">
+            <CloseIcon />
+          </button>
+        </div>
       </div>
       {props.header}
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">{props.children}</div>

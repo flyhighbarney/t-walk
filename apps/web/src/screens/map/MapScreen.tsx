@@ -470,7 +470,7 @@ export default function MapScreen({ path }: { path: string }) {
           <div className="flex items-center gap-2">
             <p
               role="status"
-              className={`pointer-events-auto inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold tracking-wide uppercase shadow-float ${
+              className={`pointer-events-auto inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold shadow-float ${
                 statusTone === 'live' ? 'bg-surface-2 text-text' : statusTone === 'stale' ? 'bg-warn-bg text-warn-fg' : statusTone === 'down' ? 'bg-down-bg text-down-fg' : 'bg-surface-2 text-muted'
               }`}
             >
@@ -478,7 +478,7 @@ export default function MapScreen({ path }: { path: string }) {
               {statusText}
             </p>
           </div>
-          <div role="group" aria-label="Show on the map" className="no-scrollbar pointer-events-auto -mx-3 flex gap-2 overflow-x-auto px-3 pb-1">
+          <div role="group" aria-label="Show on the map" className="no-scrollbar edge-fade pointer-events-auto -mx-3 flex gap-2 overflow-x-auto px-3 pb-1">
             {MODE_CHIPS.map(({ key, label, Icon }) => (
               <FilterChip key={key} active={layers.modes[key]} onClick={() => setLayers({ ...layers, modes: { ...layers.modes, [key]: !layers.modes[key] } })}>
                 <Icon className="size-4" />
@@ -619,7 +619,7 @@ function MapSearch({ onPick }: { onPick: (s: StopSummary) => void }) {
           className="placeholder:text-muted min-w-0 flex-1 bg-transparent text-base outline-none"
         />
         {q ? (
-          <button type="button" aria-label="Clear search" onClick={() => setQ('')} className="-mr-2 flex size-10 items-center justify-center">
+          <button type="button" aria-label="Clear search" onClick={() => setQ('')} className="-mr-2 flex size-11 items-center justify-center">
             <CloseIcon className="size-5" />
           </button>
         ) : null}

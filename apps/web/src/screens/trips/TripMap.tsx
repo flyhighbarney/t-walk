@@ -29,6 +29,8 @@ export default function TripMap({ option }: { option: TripOption }) {
       const m = map;
       m.on('load', () => {
         muteBasemap(m, dark);
+        // Attribution starts folded to its (i) button, so it doesn't cover the map.
+        el.current?.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
         const features = option.legs.map((l) => ({
           type: 'Feature' as const,
           properties: { color: l.transit ? `#${l.color ?? '666666'}` : dark ? '#d9e3fb' : '#3f4b5e', walk: !l.transit },
