@@ -1,0 +1,11 @@
+stop_id,stop_code,stop_name,stop_desc,platform_code,platform_name,stop_lat,stop_lon,zone_id,stop_address,stop_url,level_id,location_type,parent_station,wheelchair_boarding,municipality,on_street,at_street,vehicle_type
+place-pktrm,,Park Street,,,,42.356395,-71.062424,,,,,1,,1,Boston,,,
+70075,,Park Street,Park Street - Red Line - Ashmont/Braintree,,Ashmont/Braintree,42.356395,-71.062424,,,,,0,place-pktrm,1,Boston,,,1
+70076,,Park Street,Park Street - Red Line - Alewife,,Alewife,42.356395,-71.062424,,,,,0,place-pktrm,1,Boston,,,1
+door-pktrm-tremont,,Park Street - Tremont St,,,,42.356700,-71.062100,,,,,2,place-pktrm,1,Boston,,,
+B0,,Massachusetts Ave @ Harrison Ave,,,,42.335000,-71.076000,,,,,0,,1,Boston,,,3
+B1,,Massachusetts Ave @ Tremont St,,,,42.357000,-71.063000,,,,,0,,1,Boston,,,3
+place-sstat,,South Station,,,,42.352271,-71.055242,,,,,1,,1,Boston,,,
+NEC-2287,,South Station,South Station - Commuter Rail - Track 3,3,Commuter Rail - Track 3,42.352271,-71.055242,,,,,0,place-sstat,1,Boston,,,2
+WML-0442,,Worcester,Worcester - Commuter Rail,,,42.261796,-71.794243,,,,,0,,1,Worcester,,,2
+SH1,,Tremont St @ Winter St (shuttle),,,,42.356500,-71.062600,,,,,0,,1,Boston,,,3

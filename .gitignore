@@ -1,0 +1,10 @@
+node_modules/
+dist/
+data/
+recordings/
+.env
+*.sqlite
+*.sqlite-*
+test-results/
+playwright-report/
+lighthouse/

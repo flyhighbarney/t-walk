@@ -1,0 +1,5 @@
+route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color,route_sort_order,route_fare_class,line_id,listed_route,network_id
+Red,1,,Red Line,Rapid Transit,1,,DA291C,FFFFFF,10010,Rapid Transit,line-Red,,rapid_transit
+1,1,1,Harvard Square - Nubian Station,Key Bus,3,,FFC72C,000000,50010,Local Bus,line-1,,local_bus
+CR-Worcester,1,,Framingham/Worcester Line,Regional Rail,2,,80276C,FFFFFF,20009,Commuter Rail,line-Worcester,,commuter_rail
+Shuttle-Test,1,Shuttle,Test Shuttle,Rail Replacement Bus,3,,FFC72C,000000,60000,Free,line-Shuttle,1,rail_replacement_bus

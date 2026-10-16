@@ -1,0 +1,48 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: false,
+      includeAssets: ['icon.svg', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'T-Walk',
+        short_name: 'T-Walk',
+        description: 'Live MBTA departures near you, sorted by walking time.',
+        start_url: '/',
+        display: 'standalone',
+        background_color: '#0f1214',
+        theme_color: '#0f1214',
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },
+        ],
+      },
+      workbox: {
+        // The app shell works offline. Live data is never cached by the service
+        // worker: a stale arrival time served as if fresh is exactly what this app
+        // must not do. (Offline schedules come in Phase 4.)
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
+      },
+    }),
+  ],
+  server: {
+    port: 5173,
+    proxy: { '/api': { target: 'http://127.0.0.1:8787', changeOrigin: false } },
+  },
+  preview: {
+    port: 4173,
+    proxy: { '/api': { target: 'http://127.0.0.1:8787', changeOrigin: false } },
+  },
+  build: { target: 'es2022', sourcemap: true },
+});

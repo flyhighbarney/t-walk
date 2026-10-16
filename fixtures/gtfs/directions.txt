@@ -1,0 +1,9 @@
+route_id,direction_id,direction,direction_destination
+Red,0,South,Ashmont/Braintree
+Red,1,North,Alewife
+1,0,Outbound,Harvard Square
+1,1,Inbound,Nubian Station
+CR-Worcester,0,Outbound,Worcester
+CR-Worcester,1,Inbound,South Station
+Shuttle-Test,0,Outbound,Somewhere
+Shuttle-Test,1,Inbound,Elsewhere

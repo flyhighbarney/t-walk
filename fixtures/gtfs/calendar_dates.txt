@@ -1,0 +1,3 @@
+service_id,date,exception_type,holiday_name
+Weekday,20261012,2,Indigenous Peoples' Day
+Saturday,20261012,1,Indigenous Peoples' Day

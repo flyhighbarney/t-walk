@@ -1,0 +1,2 @@
+feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version,feed_contact_email,feed_id
+T-Walk fixture,https://example.invalid,EN,20261007,20261211,"Fixture 2026-10, made up for tests",none@example.invalid,fixture

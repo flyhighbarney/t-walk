@@ -1,0 +1,101 @@
+// T-Walk server: the only thing that talks to the MBTA.
+
+import { loadConfig } from './config.ts';
+import { GtfsDb } from './gtfs/db.ts';
+import { currentDbPath, pruneOldDatabases, refreshGtfs } from './gtfs/import.ts';
+import { buildApp } from './api/app.ts';
+import { Boards } from './api/boards.ts';
+import { OffsetClock, systemClock, type Clock } from './live/clock.ts';
+import { Ingest } from './live/ingest.ts';
+import { LiveManager } from './live/manager.ts';
+import { Recorder } from './live/recorder.ts';
+import { loadRecording, ReplayDriver } from './live/replay.ts';
+import { LiveStore } from './live/store.ts';
+
+const GTFS_CHECK_EVERY_MS = 6 * 3600_000;
+
+const config = loadConfig();
+const log = (msg: string) => console.log(`[${new Date().toISOString()}] ${msg}`);
+
+async function openDb(): Promise<GtfsDb> {
+  let path = await currentDbPath(config.dataDir);
+  if (!path || config.gtfsDir) {
+    log(config.gtfsDir ? `Importing GTFS from ${config.gtfsDir}` : 'No GTFS imported yet; downloading (about a minute)…');
+    path = (await refreshGtfs({ dataDir: config.dataDir, userAgent: config.userAgent, localSource: config.gtfsDir ?? undefined, log })).dbPath;
+  }
+  if (!path) throw new Error('GTFS import produced no database');
+  return new GtfsDb(path);
+}
+
+let db = await openDb();
+log(`GTFS: ${db.feedVersion ?? 'unknown version'}`);
+
+const replayEvents = config.replayFile ? loadRecording(config.replayFile) : null;
+const clock: Clock =
+  replayEvents || config.fakeNow != null
+    ? new OffsetClock(config.fakeNow ?? replayEvents?.[0]?.t ?? Date.now())
+    : systemClock;
+
+const store = new LiveStore();
+const ingest = new Ingest({
+  store,
+  clock,
+  routeType: (id) => {
+    const mode = db.routes().get(id)?.mode;
+    return mode === 'bus' ? 3 : mode ? 0 : undefined;
+  },
+  log,
+  replay: replayEvents != null,
+});
+
+let manager: LiveManager | null = null;
+let replay: ReplayDriver | null = null;
+if (replayEvents) {
+  log(`Replaying ${replayEvents.length} events from ${config.replayFile}`);
+  replay = new ReplayDriver(replayEvents, ingest);
+  replay.follow(clock);
+} else {
+  manager = new LiveManager({
+    apiKey: config.mbtaApiKey,
+    userAgent: config.userAgent,
+    clock,
+    ingest,
+    routesByType: db.routeIdsByType(),
+    recorder: config.recordDir ? new Recorder(config.recordDir) : null,
+    log,
+  });
+  manager.start();
+}
+
+const boards = new Boards({ getDb: () => db, store, ingest, clock });
+const app = await buildApp({ getDb: () => db, boards, clock, webDist: config.webDist, logger: false });
+await app.listen({ port: config.port, host: config.host });
+log(`Listening on http://${config.host}:${config.port}`);
+
+// Pick up new GTFS feeds (the MBTA publishes several a week). Not in replay or local-GTFS mode.
+if (!replayEvents && !config.gtfsDir) {
+  setInterval(async () => {
+    try {
+      const r = await refreshGtfs({ dataDir: config.dataDir, userAgent: config.userAgent, log });
+      if (r.changed && r.dbPath) {
+        const old = db;
+        db = new GtfsDb(r.dbPath);
+        old.close();
+        await pruneOldDatabases(config.dataDir, r.dbPath);
+        log(`Switched to GTFS ${db.feedVersion}`);
+      }
+    } catch (err) {
+      log(`GTFS check failed: ${(err as Error).message}`);
+    }
+  }, GTFS_CHECK_EVERY_MS).unref();
+}
+
+const shutdown = async () => {
+  manager?.stop();
+  replay?.stop();
+  await app.close();
+  db.close();
+  process.exit(0);
+};
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
