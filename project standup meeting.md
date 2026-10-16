@@ -1,5 +1,11 @@
 # T-Walk standup log
 
+## 2026-10-16 (hourly run 9)
+- **Verified:** commit ac90ed3: typecheck, lint, 193 unit and 23 e2e pass.
+- **Done:** README now documents `GET /api/history/summary`. Docs only.
+- **Next:** no phase planned. Candidates: screen reader pass, check recorded delays after days of live running.
+- **Not verified:** history with real MBTA data, screen reader pass, real-device touch/compass, long stop names on Map sheets.
+
 ## 2026-10-16 (hourly run 8)
 - **Verified:** commit 45d909b: typecheck, lint, 192 unit and 23 e2e pass.
 - **Done:** HTTP test for `/api/history/summary` (counts with history, 404 without).
