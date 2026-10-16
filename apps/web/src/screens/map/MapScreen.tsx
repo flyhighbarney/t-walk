@@ -5,7 +5,7 @@
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Map as MlMap, Marker, setWorkerUrl, type GeoJSONSource, type MapLayerMouseEvent } from 'maplibre-gl';
+import { Map as MlMap, Marker, setWorkerUrl, type GeoJSONSource, type MapMouseEvent } from 'maplibre-gl';
 // MapLibre looks for its worker next to its own file, which the bundler renames; point it at the emitted one.
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import {
@@ -161,6 +161,12 @@ export default function MapScreen({ path }: { path: string }) {
     });
     const setup = (map: MlMap) => {
     mapRef.current = map;
+    // For debugging in a browser console: localStorage.twalkDebug = '1'.
+    try {
+      if (localStorage.getItem('twalkDebug')) (window as unknown as { twalkMap: MlMap }).twalkMap = map;
+    } catch {
+      // No storage: no debug handle.
+    }
     animator.current.reducedMotion = reducedMotion;
     const report = () => {
       const b = map.getBounds();
@@ -217,25 +223,26 @@ export default function MapScreen({ path }: { path: string }) {
       map.addSource('vehicle-pick', { type: 'geojson', data: EMPTY });
       map.addLayer({ id: 'vehicle-pick', type: 'circle', source: 'vehicle-pick', paint: { 'circle-radius': 22, 'circle-color': 'transparent', 'circle-stroke-color': '#51df8e', 'circle-stroke-width': 3 } }, 'vehicles');
 
-      const open = (layer: string, fn: (e: MapLayerMouseEvent) => void) => {
-        map.on('click', layer, fn);
+      // One tap opens one thing. Per-layer handlers all fired at once, and the
+      // last one (often a hidden layer's) won. The top-most target wins: a
+      // vehicle's icon, then a station or stop, then a Bluebikes dock.
+      const targets: [string, 'vehicle' | 'stop' | 'bike'][] = [
+        ['vehicles', 'vehicle'],
+        ['station-hit', 'stop'],
+        ['bus-stop-hit', 'stop'],
+        ['bikes', 'bike'],
+      ];
+      map.on('click', (e: MapMouseEvent) => {
+        for (const [layer, kind] of targets) {
+          if (map.getLayoutProperty(layer, 'visibility') === 'none') continue;
+          const id = map.queryRenderedFeatures(e.point, { layers: [layer] })[0]?.properties?.id;
+          if (id != null) return setSheet({ kind, id: String(id) });
+        }
+      });
+      for (const [layer] of targets) {
         map.on('mouseenter', layer, () => (map.getCanvas().style.cursor = 'pointer'));
         map.on('mouseleave', layer, () => (map.getCanvas().style.cursor = ''));
-      };
-      open('vehicles', (e) => {
-        const id = e.features?.[0]?.properties?.id;
-        if (id) setSheet({ kind: 'vehicle', id: String(id) });
-      });
-      for (const l of ['station-hit', 'bus-stop-hit']) {
-        open(l, (e) => {
-          const id = e.features?.[0]?.properties?.id;
-          if (id) setSheet({ kind: 'stop', id: String(id) });
-        });
       }
-      open('bikes', (e) => {
-        const id = e.features?.[0]?.properties?.id;
-        if (id) setSheet({ kind: 'bike', id: String(id) });
-      });
       setReady(true);
       report();
     });
@@ -500,8 +507,8 @@ export default function MapScreen({ path }: { path: string }) {
           ) : null}
         </div>
 
-        {/* Right: map controls */}
-        <div className="absolute top-44 right-3 z-20 flex flex-col gap-2">
+        {/* Right: map controls, out of the way while a sheet is open (as in Google Maps) */}
+        <div className={`absolute top-44 right-3 z-20 flex-col gap-2 ${sheet ? 'hidden' : 'flex'}`}>
           <MapButton
             label="Show where I am"
             onClick={() => {

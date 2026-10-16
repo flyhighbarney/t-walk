@@ -82,3 +82,25 @@ test('the navigation screen has no axe accessibility violations', async ({ page,
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).exclude('.maplibregl-canvas').analyze();
   expect(results.violations).toEqual([]);
 });
+
+test('tapping near a station opens that station, once', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('twalkDebug', '1'));
+  await page.goto('/map');
+  await page.waitForFunction(() => {
+    const m = (window as unknown as { twalkMap?: { querySourceFeatures: (s: string) => unknown[] } }).twalkMap;
+    return m != null && m.querySourceFeatures('stations').length > 0;
+  });
+  // A finger's width (12 px) off the ring still counts.
+  const point = await page.evaluate(() => {
+    type M = { project: (ll: number[]) => { x: number; y: number }; getCanvas: () => HTMLCanvasElement; querySourceFeatures: (s: string) => { properties: { id: string }; geometry: { coordinates: number[] } }[] };
+    const m = (window as unknown as { twalkMap: M }).twalkMap;
+    const f = m.querySourceFeatures('stations').find((x) => x.properties.id === 'place-pktrm')!;
+    const p = m.project(f.geometry.coordinates);
+    const r = m.getCanvas().getBoundingClientRect();
+    return { x: r.left + p.x + 12, y: r.top + p.y + 12 };
+  });
+  await page.mouse.click(point.x, point.y);
+  await expect(page).toHaveURL(/stop=place-pktrm/);
+  await expect(page.getByRole('dialog')).toContainText('Park Street');
+});

@@ -17,7 +17,7 @@ Walked at phone size (375×812, dark) on the live build at http://127.0.0.1:8787
 
 **Verdict at the audit:** Block (four HIGH).
 
-**After the Phase 5 fixes:** all ten fixed. #1–#4 have tests (`tests/phase4.test.ts` for the feed timestamp; `e2e/phase5.spec.ts` for Back on Map and Trips, refresh, Start and navigation). #6 was checked on the live server. #5 and #7–#10 are built and type-checked but not re-walked in the browser yet.
+**After the Phase 5 fixes:** all ten fixed. #1–#4 have tests (`tests/phase4.test.ts` for the feed timestamp; `e2e/phase5.spec.ts` for Back on Map and Trips, refresh, Start and navigation). Re-walk of #5–#10 found the real cause of #7: every layer had its own click handler, so one tap opened up to three sheets, and the last one, often the switched-off Bluebikes layer's, won and drew nothing. Taps now go to one handler that picks the top-most target (vehicle, then station or stop, then dock), covered by `e2e/phase5.spec.ts`. The map controls now hide while a sheet is open, since they overlapped its top. #6, #8, #9 and #10 were checked in the browser. #5 (the loading placeholder) is in the code, but the tiles were cached, so it couldn't be seen.
 
 **Not verified:**
 - Overflow with very long stop names on the Map sheets.
