@@ -92,7 +92,7 @@ export function TripCard({ option, onOpen, tag }: { option: TripOption; onOpen: 
           </span>
           <span className="tabular text-lg font-bold">{minutes(option.durationS)}</span>
         </span>
-        {tag ? <span className="bg-surface-2 text-brand-text mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-bold">{tag}</span> : null}
+        {tag ? <span className="bg-surface-2 text-accent-text mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-bold">{tag}</span> : null}
         {option.alsoAt.length > 0 ? <span className="text-muted mt-0.5 block text-sm">Also at {option.alsoAt.map(clock).join(', ')}</span> : null}
         <span className="mt-2 flex flex-wrap items-center gap-1.5">
           {option.legs.map((l, i) => (
@@ -180,7 +180,7 @@ export function LegView({ leg, next, transfer, onMissed }: { leg: TripLeg; next?
           <SourceTag source={leg.source} />
           {late >= 2 ? <span className="text-warn-text font-semibold">{late} min late</span> : null}
         </p>
-        {leg.stayOn ? <p className="text-brand-text mt-1 text-sm font-semibold">Stay on board: the same vehicle continues</p> : null}
+        {leg.stayOn ? <p className="text-accent-text mt-1 text-sm font-semibold">Stay on board: the same vehicle continues</p> : null}
         <p className="text-muted mt-1 text-sm">{leg.stopsBetween > 0 ? `Ride ${leg.stopsBetween + 1} stops` : 'Ride 1 stop'}</p>
         <p className="mt-1 flex items-baseline justify-between gap-2">
           <span>

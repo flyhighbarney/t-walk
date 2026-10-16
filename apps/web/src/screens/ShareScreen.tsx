@@ -61,7 +61,7 @@ export default function ShareScreen({ path }: { path: string }) {
             {view.name ? `${view.name} is` : "They're"} {view.arrived ? 'at' : 'on the way to'} {view.to}
           </h1>
           {view.arrived ? (
-            <p className="text-brand-text text-4xl font-extrabold">Arrived</p>
+            <p className="text-accent-text text-4xl font-extrabold">Arrived</p>
           ) : (
             <>
               <p className="tabular text-5xl font-extrabold">{formatClock(view.eta).full}</p>

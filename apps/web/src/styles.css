@@ -1,25 +1,31 @@
 @import 'tailwindcss';
 
 /*
- * Colour tokens, from the Stitch design ("Urban Kinetic Transit", design/stitch/).
- * Dark is the design's main look; light follows its light tokens.
+ * Colour tokens. Black and white: neutral greys for surfaces, and buttons,
+ * tabs, chips, switches, links and icons in black or white ("brand" here means
+ * the primary control colour). Green is an accent for a few things only:
+ * live indicators, "you have time", the trip tags ("Fastest", "Stay on board",
+ * "Arrived"), crowding, and you and your walk on the maps. Status colours
+ * (amber, red) and the MBTA's own line colours keep their meaning.
  * Every text/background pair here is at least 4.5:1 (WCAG AA).
- * Brand green is for interface chrome only, never for a route line.
  */
 :root {
   color-scheme: light dark;
-  --bg: #f9f9ff;
+  --bg: #f4f4f5;
   --surface: #ffffff;
-  --surface-2: #f0f3ff;
-  --surface-3: #e3eaff;
-  --line: #d3dcf3;
-  --text: #111c2d;
-  --muted: #3f4b5e;
-  --brand: #12b76a;
-  --on-brand: #04210f;
-  --brand-text: #006d3c;
-  --focus: #006d3c;
+  --surface-2: #f0f0f1;
+  --surface-3: #e4e4e7;
+  --line: #d4d4d8;
+  --text: #0a0a0a;
+  --muted: #52525b;
+  --brand: #0a0a0a;
+  --on-brand: #ffffff;
+  --brand-text: #0a0a0a;
+  --focus: #0a0a0a;
   --live: #006d3c;
+  /* The green accent: fills, and text on surfaces. */
+  --accent: #12b76a;
+  --accent-text: #006d3c;
   --ok-fg: #0d6b35;
   --ok-bg: #dcf5e6;
   --hurry-fg: #7f4a00;
@@ -33,26 +39,27 @@
   --miss-text: #a3231b;
   --down-fg: #ffffff;
   --down-bg: #8a2d22;
-  --star: #9a5400;
+  --star: #0a0a0a;
   --chrome: rgb(255 255 255 / 0.94);
-  --shadow: 0 6px 24px rgb(17 28 45 / 0.14);
+  --shadow: 0 6px 24px rgb(0 0 0 / 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
-  /* Exact values from the Stitch Map design (shared 2026-10-16; see design/stitch/README.md). */
   :root {
-    --bg: #091324;
-    --surface: #111c2d;
-    --surface-2: #202a3c;
-    --surface-3: #2b3548;
-    --line: #3d4a3f;
-    --text: #d9e3fb;
-    --muted: #bccabc;
-    --brand: #12b76a;
-    --on-brand: #00210e;
-    --brand-text: #51df8e;
-    --focus: #51df8e;
+    --bg: #0a0a0a;
+    --surface: #171717;
+    --surface-2: #242424;
+    --surface-3: #303030;
+    --line: #3a3a3a;
+    --text: #fafafa;
+    --muted: #a1a1aa;
+    --brand: #fafafa;
+    --on-brand: #0a0a0a;
+    --brand-text: #fafafa;
+    --focus: #fafafa;
     --live: #51df8e;
+    --accent: #12b76a;
+    --accent-text: #51df8e;
     /* Status chips stay light in dark mode, as in the design. */
     --ok-fg: #0d6b35;
     --ok-bg: #dcf5e6;
@@ -66,8 +73,8 @@
     --miss-text: #ffb4ab;
     --down-fg: #ffdad6;
     --down-bg: #93000a;
-    --star: #ffc15a;
-    --chrome: rgb(4 14 31 / 0.9);
+    --star: #fafafa;
+    --chrome: rgb(10 10 10 / 0.9);
     --shadow: 0 8px 28px rgb(0 0 0 / 0.5);
   }
 }
@@ -85,6 +92,8 @@
   --color-on-brand: var(--on-brand);
   --color-brand-text: var(--brand-text);
   --color-live: var(--live);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
   --color-ok-fg: var(--ok-fg);
   --color-ok-bg: var(--ok-bg);
   --color-hurry-fg: var(--hurry-fg);

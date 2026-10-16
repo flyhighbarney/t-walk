@@ -32,7 +32,7 @@ function features(option: TripOption, legIndex: number, dark: boolean) {
     features: option.legs.map((l, i) => ({
       type: 'Feature' as const,
       properties: {
-        color: i < legIndex ? (dark ? '#5d6880' : '#a7b0c2') : l.transit ? `#${l.color ?? '666666'}` : '#51df8e',
+        color: i < legIndex ? (dark ? '#5c5c5c' : '#a1a1aa') : l.transit ? `#${l.color ?? '666666'}` : '#51df8e',
         walk: !l.transit,
         current: i === legIndex,
       },
@@ -87,7 +87,7 @@ export default function GoMap(props: GoMapProps) {
         // Attribution starts folded to its (i) button, so it doesn't cover the map.
         el.current?.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
         m.addSource('trip', { type: 'geojson', data: features(props.option, props.legIndex, dark) });
-        m.addLayer({ id: 'trip-casing', type: 'line', source: 'trip', filter: ['!', ['get', 'walk']], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': dark ? '#04101f' : '#ffffff', 'line-width': 11 } });
+        m.addLayer({ id: 'trip-casing', type: 'line', source: 'trip', filter: ['!', ['get', 'walk']], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': dark ? '#000000' : '#ffffff', 'line-width': 11 } });
         m.addLayer({ id: 'trip-ride', type: 'line', source: 'trip', filter: ['!', ['get', 'walk']], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': 7 } });
         m.addLayer({ id: 'trip-walk', type: 'line', source: 'trip', filter: ['get', 'walk'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'current'], 6, 4], 'line-dasharray': [0.2, 1.6] } });
         const end = props.option.legs[props.option.legs.length - 1]!.to;

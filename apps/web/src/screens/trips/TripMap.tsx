@@ -33,7 +33,7 @@ export default function TripMap({ option }: { option: TripOption }) {
         el.current?.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
         const features = option.legs.map((l) => ({
           type: 'Feature' as const,
-          properties: { color: l.transit ? `#${l.color ?? '666666'}` : dark ? '#d9e3fb' : '#3f4b5e', walk: !l.transit },
+          properties: { color: l.transit ? `#${l.color ?? '666666'}` : dark ? '#51df8e' : '#006d3c', walk: !l.transit },
           geometry: { type: 'LineString' as const, coordinates: l.geometry.length > 1 ? l.geometry : [[l.from.lon, l.from.lat], [l.to.lon, l.to.lat]] },
         }));
         m.addSource('trip', { type: 'geojson', data: { type: 'FeatureCollection', features } });
@@ -48,7 +48,7 @@ export default function TripMap({ option }: { option: TripOption }) {
           })),
         };
         m.addSource('ends', { type: 'geojson', data: ends });
-        m.addLayer({ id: 'ends', type: 'circle', source: 'ends', paint: { 'circle-radius': 7, 'circle-color': ['case', ['get', 'end'], '#12b76a', '#ffffff'], 'circle-stroke-color': '#04210f', 'circle-stroke-width': 2 } });
+        m.addLayer({ id: 'ends', type: 'circle', source: 'ends', paint: { 'circle-radius': 7, 'circle-color': ['case', ['get', 'end'], '#12b76a', '#ffffff'], 'circle-stroke-color': '#0a0a0a', 'circle-stroke-width': 2 } });
         const b = new LngLatBounds();
         for (const f of features) for (const c of f.geometry.coordinates) b.extend(c as [number, number]);
         m.fitBounds(b, { padding: 32, duration: 0 });

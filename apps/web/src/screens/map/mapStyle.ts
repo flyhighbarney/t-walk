@@ -31,10 +31,10 @@ export async function loadBasemap(dark: boolean): Promise<StyleSpecification> {
   }
 }
 
-/** Colours from the Stitch map design. */
+/** A greyscale basemap, so the MBTA's line colours (and you, in green) are what stands out. */
 export const MAP_COLORS = {
-  dark: { land: '#070e1c', water: '#091f38', park: '#0a2a1b', road: '#17263c', building: '#0c1729', casing: '#040e1f', stationFill: '#091324', label: '#d9e3fb', halo: '#040e1f' },
-  light: { land: '#f4f6fb', water: '#cfe0f2', park: '#dcefe0', road: '#ffffff', building: '#e6eaf2', casing: '#ffffff', stationFill: '#ffffff', label: '#111c2d', halo: '#ffffff' },
+  dark: { land: '#0a0a0a', water: '#1c1c1e', park: '#121212', road: '#262626', building: '#151515', casing: '#000000', stationFill: '#0a0a0a', label: '#fafafa', halo: '#000000' },
+  light: { land: '#f4f4f5', water: '#dcdce0', park: '#e9e9eb', road: '#ffffff', building: '#e7e7ea', casing: '#ffffff', stationFill: '#ffffff', label: '#0a0a0a', halo: '#ffffff' },
 };
 
 export const BIKE_COLOR = '#2b7fff';

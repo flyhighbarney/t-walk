@@ -581,7 +581,7 @@ function MapButton(props: { label: string; onClick: () => void; children: React.
       className={`shadow-float relative flex size-12 items-center justify-center rounded-full ${props.pressed ? 'bg-brand text-on-brand' : 'bg-surface-2 text-text'}`}
     >
       {props.children}
-      {props.dot ? <span className="bg-brand-text absolute top-2 right-2 size-2 rounded-full" aria-hidden /> : null}
+      {props.dot ? <span className="bg-accent absolute top-2 right-2 size-2 rounded-full" aria-hidden /> : null}
     </button>
   );
 }

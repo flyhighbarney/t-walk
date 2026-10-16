@@ -26,7 +26,7 @@ export function CrowdingDots({ dots }: { dots: number }) {
   return (
     <span className="inline-flex gap-0.5" aria-hidden>
       {[0, 1, 2].map((i) => (
-        <span key={i} className={`size-1.5 rounded-full ${i < dots ? 'bg-brand-text' : 'bg-surface-3'}`} />
+        <span key={i} className={`size-1.5 rounded-full ${i < dots ? 'bg-accent' : 'bg-surface-3'}`} />
       ))}
     </span>
   );
