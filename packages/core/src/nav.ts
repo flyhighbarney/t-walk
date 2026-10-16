@@ -90,15 +90,15 @@ function shapeOf(leg: TripLeg): PreparedShape | null {
 const usable = (fix: NavFix | null, now: number): fix is NavFix => fix != null && now - fix.at <= FIX_STALE_MS && fix.accuracy <= ACCURACY_LIMIT_M;
 
 function maneuverOf(text: string): Maneuver {
-  if (/^Turn around/.test(text)) return 'uturn';
-  if (/^Bear left/.test(text)) return 'slight-left';
-  if (/^Bear right/.test(text)) return 'slight-right';
+  if (text.startsWith('Turn around')) return 'uturn';
+  if (text.startsWith('Bear left')) return 'slight-left';
+  if (text.startsWith('Bear right')) return 'slight-right';
   if (/left/.test(text)) return 'left';
   if (/right/.test(text)) return 'right';
-  if (/^Enter/.test(text)) return 'enter';
-  if (/^Leave the station/.test(text)) return 'exit';
+  if (text.startsWith('Enter')) return 'enter';
+  if (text.startsWith('Leave the station')) return 'exit';
   if (/elevator/i.test(text)) return 'elevator';
-  if (/^Head/.test(text)) return 'depart';
+  if (text.startsWith('Head')) return 'depart';
   return 'straight';
 }
 

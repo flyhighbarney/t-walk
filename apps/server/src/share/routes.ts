@@ -30,7 +30,7 @@ interface Share {
   arrivedAt: number | null;
 }
 
-const text = (v: unknown, max: number) => (typeof v === 'string' ? v.replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max) : '');
+const text = (v: unknown, max: number) => (typeof v === 'string' ? v.replace(/\p{Cc}/gu, ' ').trim().slice(0, max) : '');
 
 export class ShareStore {
   private readonly shares = new Map<string, Share>();
