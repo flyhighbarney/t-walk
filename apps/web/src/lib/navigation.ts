@@ -4,7 +4,7 @@
 // reload. Location is used only while the page is open.
 
 import { useEffect, useRef, useState } from 'react';
-import type { NavFix, NavProgress, TripLive, TripOption } from '@twalk/core';
+import { headingOf, smoothHeading, type HeadingVector, type NavFix, type NavProgress, type TripLive, type TripOption } from '@twalk/core';
 import { apiUrl, getJson } from './api.ts';
 import { usePageVisible } from './live.ts';
 
@@ -65,6 +65,26 @@ export function useCompass(): { heading: number | null; needsPermission: boolean
       void Ctor?.requestPermission?.().then((r) => setAllowed(r === 'granted')).catch(() => {});
     },
   };
+}
+
+/**
+ * Smooths a heading (compass or GPS course) so it doesn't jitter between readings. Starts
+ * fresh (no blend) whenever heading comes back after being unknown, rather than blending
+ * from a stale direction.
+ */
+export function useSmoothedHeading(heading: number | null): number | null {
+  const vec = useRef<HeadingVector | null>(null);
+  const [out, setOut] = useState<number | null>(null);
+  useEffect(() => {
+    if (heading == null) {
+      vec.current = null;
+      setOut(null);
+      return;
+    }
+    vec.current = smoothHeading(vec.current, heading);
+    setOut(headingOf(vec.current));
+  }, [heading]);
+  return out;
 }
 
 /** The live state of one trip, every 10 s while the page is visible (every 5 s when it matters most). */

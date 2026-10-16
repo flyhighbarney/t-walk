@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pointAlong, prepareShape, simplify, snapToShape, type LngLat } from './geo.ts';
+import { headingOf, pointAlong, prepareShape, simplify, smoothHeading, snapToShape, type LngLat } from './geo.ts';
 import { addReport, DEPARTURE_EASE_MS, EXTRAPOLATE_MAX_MS, positionAt, TRANSITION_MS, type VehicleReport } from './motion.ts';
 
 // A straight 1 km line due north from Park Street, and a dogleg.
@@ -29,6 +29,25 @@ describe('geometry', () => {
     const kx = 111_320 * Math.cos((LAT0 * Math.PI) / 180);
     const dogleg: LngLat[] = [north(0), north(500), [LON0 + 500 / kx, north(500)[1]]];
     expect(simplify(dogleg, 5)).toHaveLength(3);
+  });
+
+  it('blends a heading smoothly across the 359°→1° wrap instead of averaging straight through it', () => {
+    let v = smoothHeading(null, 359);
+    expect(headingOf(v)).toBeCloseTo(359);
+    v = smoothHeading(v, 1); // a plain mean of 359 and 1 would be 180 (due south); the true blend is near 0/360
+    const h = headingOf(v);
+    expect(h < 10 || h > 350).toBe(true);
+  });
+
+  it('settles toward a steady heading over repeated readings', () => {
+    let v = smoothHeading(null, 90);
+    for (let i = 0; i < 10; i++) v = smoothHeading(v, 100);
+    expect(headingOf(v)).toBeCloseTo(100, 0);
+  });
+
+  it('starts fresh from the first reading, with no blend toward a prior direction', () => {
+    const v = smoothHeading(null, 270);
+    expect(headingOf(v)).toBeCloseTo(270);
   });
 });
 

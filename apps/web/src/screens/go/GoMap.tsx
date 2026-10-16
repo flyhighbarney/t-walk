@@ -4,13 +4,19 @@
 // map apps do; touch the map and it stops following until you tap Re-center.
 
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LngLatBounds, Map as MlMap, Marker, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
-import type { NavPhase, TripOption } from '@twalk/core';
-import { loadBasemap, muteBasemap, prefersDark } from '../map/mapStyle.ts';
+import { addReport, pointAlong, positionAt, prepareShape, snapToShape, type DrawnPosition, type NavPhase, type PreparedShape, type Track, type TripOption } from '@twalk/core';
+import { serverNow } from '../../lib/live.ts';
+import { addBuildingExtrusion, loadBasemap, muteBasemap, prefersDark } from '../map/mapStyle.ts';
 
 setWorkerUrl(workerUrl);
+
+/** Further than this from the walk's line, a fix is off it: no guessing, just glide to the reported point. */
+const WALK_SNAP_OFFSET_M = 60;
+/** The walking dot never goes stale/grey; nav.ts already drops the fix (and so `position`) before this matters. */
+const WALK_STALE_MS = 60_000;
 
 export interface GoMapProps {
   option: TripOption;
@@ -61,6 +67,9 @@ export default function GoMap(props: GoMapProps) {
   const mapRef = useRef<MlMap | null>(null);
   const you = useRef<Marker | null>(null);
   const veh = useRef<Marker | null>(null);
+  const walkTrack = useRef<Track | null>(null);
+  const walkDrawn = useRef<DrawnPosition | null>(null);
+  const walkRaf = useRef(0);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const dark = useRef(prefersDark()).current;
@@ -84,6 +93,7 @@ export default function GoMap(props: GoMapProps) {
       mapRef.current = m;
       m.on('load', () => {
         muteBasemap(m, dark);
+        addBuildingExtrusion(m, dark);
         // Attribution starts folded to its (i) button, so it doesn't cover the map.
         el.current?.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
         m.addSource('trip', { type: 'geojson', data: features(props.option, props.legIndex, dark) });
@@ -118,8 +128,15 @@ export default function GoMap(props: GoMapProps) {
     (mapRef.current?.getSource('trip') as GeoJSONSource | undefined)?.setData(features(props.option, props.legIndex, dark));
   }, [ready, props.option, props.legIndex, dark]);
 
+  // Walking: the line to glide the GPS dot along, like a vehicle on its route.
+  const walkShape = useMemo<PreparedShape | null>(() => {
+    const leg = props.option.legs[props.legIndex];
+    return leg && !leg.transit && leg.geometry.length > 1 ? prepareShape(leg.geometry) : null;
+  }, [props.option, props.legIndex]);
+
   // You.
   const pos = props.position;
+  const smoothed = pos != null && pos.source === 'gps' && walkShape != null;
   useEffect(() => {
     const m = mapRef.current;
     if (!ready || !m) return;
@@ -129,14 +146,52 @@ export default function GoMap(props: GoMapProps) {
       return;
     }
     if (!you.current) you.current = new Marker({ element: youElement(), rotationAlignment: 'map', pitchAlignment: 'map' }).setLngLat([pos.lon, pos.lat]).addTo(m);
-    else you.current.setLngLat([pos.lon, pos.lat]);
+    else if (!smoothed) you.current.setLngLat([pos.lon, pos.lat]);
     const node = you.current.getElement();
     const cone = node.querySelector<SVGElement>('[data-cone]')!;
     cone.style.display = props.heading == null ? 'none' : '';
     if (props.heading != null) cone.style.transform = `rotate(${props.heading}deg)`;
     // Riding underground, "you" is the train's last report: shown hollow.
     node.querySelector<HTMLElement>('[data-dot]')!.style.background = pos.source === 'vehicle' ? 'transparent' : '#12b76a';
-  }, [ready, pos?.lat, pos?.lon, pos?.source, props.heading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ready, pos?.lat, pos?.lon, pos?.source, props.heading, smoothed]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A new walk (or leaving one) starts a fresh track: distance and speed from the last one don't carry over.
+  useEffect(() => {
+    walkTrack.current = null;
+    walkDrawn.current = null;
+  }, [walkShape]);
+
+  // Feed each fix into the track: glide to it, honestly (packages/core/src/motion.ts) — the
+  // same engine that draws vehicles, reused here since a walk leg has a real line too.
+  useEffect(() => {
+    if (!smoothed || !pos || !walkShape) return;
+    const now = serverNow();
+    const snap = snapToShape(walkShape, pos.lon, pos.lat);
+    const distance = snap && snap.offset <= WALK_SNAP_OFFSET_M ? snap.distance : null;
+    walkTrack.current = addReport(
+      walkTrack.current,
+      { t: now, lon: pos.lon, lat: pos.lat, distance, status: 'IN_TRANSIT_TO', capDistance: null },
+      now,
+      walkDrawn.current ? { lon: walkDrawn.current.lon, lat: walkDrawn.current.lat, distance: walkDrawn.current.distance } : null,
+    );
+  }, [smoothed, pos?.lat, pos?.lon, walkShape]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Draw it: a short glide to each fix, then a capped run at the pace measured between them.
+  useEffect(() => {
+    if (!smoothed || !walkShape) return;
+    const along = (d: number) => pointAlong(walkShape, d);
+    const tick = () => {
+      const track = walkTrack.current;
+      const m = you.current;
+      if (!track || !m) return;
+      const drawn = positionAt(track, serverNow(), { staleAfterMs: WALK_STALE_MS, reducedMotion, along });
+      walkDrawn.current = drawn;
+      m.setLngLat([drawn.lon, drawn.lat]);
+      if (drawn.state === 'moving') walkRaf.current = requestAnimationFrame(tick);
+    };
+    walkRaf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(walkRaf.current);
+  }, [smoothed, walkShape, pos?.lat, pos?.lon]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The vehicle you're waiting for or riding.
   const v = props.vehicle;

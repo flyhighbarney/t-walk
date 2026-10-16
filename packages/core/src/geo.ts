@@ -118,3 +118,21 @@ export function pointAlong(shape: PreparedShape, distance: number): { lon: numbe
   const bearing = (Math.atan2((b[0] - a[0]) * shape.kx, (b[1] - a[1]) * M_PER_DEG_LAT) * 180) / Math.PI;
   return { lon: a[0] + t * (b[0] - a[0]), lat: a[1] + t * (b[1] - a[1]), bearing: (bearing + 360) % 360 };
 }
+
+/** A heading smoothed by blending unit vectors, so it survives round-tripping through north. */
+export interface HeadingVector {
+  x: number;
+  y: number;
+}
+
+/** Blends a new heading (degrees from north) into a running one, handling the 359°→1° wrap a plain average gets wrong. */
+export function smoothHeading(prev: HeadingVector | null, headingDeg: number, amount = 0.3): HeadingVector {
+  const rad = (headingDeg * Math.PI) / 180;
+  const point = { x: Math.cos(rad), y: Math.sin(rad) };
+  return prev ? { x: prev.x + amount * (point.x - prev.x), y: prev.y + amount * (point.y - prev.y) } : point;
+}
+
+/** The smoothed heading itself, degrees from north. */
+export function headingOf(v: HeadingVector): number {
+  return ((Math.atan2(v.y, v.x) * 180) / Math.PI + 360) % 360;
+}

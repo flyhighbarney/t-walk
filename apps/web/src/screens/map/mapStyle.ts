@@ -63,6 +63,41 @@ export function muteBasemap(map: MlMap, dark: boolean): void {
   }
 }
 
+/**
+ * Replaces the flat building layer with extruded ones, for navigation's tilted view. OpenFreeMap's
+ * tiles are unmodified OpenMapTiles, whose building layer carries `render_height`/`render_min_height`
+ * (plus `hide_3d` for footprints — outlines of buildings already drawn elsewhere — that shouldn't be
+ * extruded). Not called for Now/Map, which keep the flat 2D buildings `muteBasemap` already recolours.
+ */
+export function addBuildingExtrusion(map: MlMap, dark: boolean): void {
+  const base = (map.getStyle().layers ?? []).find((l) => l.type === 'fill' && /building/.test(l.id) && 'source-layer' in l);
+  if (!base || !('source-layer' in base) || !base['source-layer']) return;
+  try {
+    map.setLayoutProperty(base.id, 'visibility', 'none');
+    const hideOutlines: ExpressionSpecification = ['!=', ['get', 'hide_3d'], true];
+    const filter = (base.filter ? ['all', base.filter, hideOutlines] : hideOutlines) as ExpressionSpecification;
+    map.addLayer(
+      {
+        id: 'buildings-3d',
+        type: 'fill-extrusion',
+        source: base.source,
+        'source-layer': base['source-layer'],
+        ...(base.minzoom != null ? { minzoom: base.minzoom } : {}),
+        filter,
+        paint: {
+          'fill-extrusion-color': dark ? '#242428' : '#d8d8dd',
+          'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 5],
+          'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+          'fill-extrusion-opacity': 0.9,
+        },
+      },
+      base.id,
+    );
+  } catch {
+    // Tiles without building height data (or an unexpected basemap): leave buildings flat.
+  }
+}
+
 /** Route colour from a feature's `color` property ("DA291C"). */
 export const lineColor: ExpressionSpecification = ['concat', '#', ['get', 'color']];
 

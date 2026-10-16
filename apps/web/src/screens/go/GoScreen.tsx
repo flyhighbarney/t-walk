@@ -34,6 +34,7 @@ import {
   useCompass,
   useNavFix,
   useShareSync,
+  useSmoothedHeading,
   useTripLive,
   useWakeLock,
   type GoSession,
@@ -215,7 +216,7 @@ function Navigator({ session, onChange }: { session: GoSession; onChange: (s: Go
       : null;
   const showReplan = (state.late || (offSince.current != null && now - offSince.current > 20_000)) && replanHref;
 
-  const heading = compass.heading ?? (fixState.kind === 'ok' ? fixState.course : null);
+  const heading = useSmoothedHeading(compass.heading ?? (fixState.kind === 'ok' ? fixState.course : null));
   const v = live?.vehicle ?? null;
   const vehicleView = v && pollLeg ? { lat: v.latitude, lon: v.longitude, label: v.label ? `${pollLeg.routeLabel ?? ''} ${v.label}`.trim() : (pollLeg.routeLabel ?? ''), ...colorsOf(pollLeg.color), stale: now - v.updatedAt > 90_000 } : null;
   const bannerStyle = state.phase === 'walk' || state.phase === 'arrived' ? { background: '#12b76a', color: '#00210e' } : readableStyle(cur.color);
