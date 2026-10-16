@@ -145,3 +145,30 @@ export const PersonIcon = ({ className }: P) => (
     <path d="M5 20c1-4 4-5.5 7-5.5s6 1.5 7 5.5" />
   </svg>
 );
+
+export const RouteIcon = ({ className }: P) => (
+  <svg {...big} {...stroke} className={className}>
+    <circle cx="6" cy="18" r="2.5" />
+    <circle cx="18" cy="6" r="2.5" />
+    <path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" />
+  </svg>
+);
+
+export const SwapIcon = ({ className }: P) => (
+  <svg {...big} {...stroke} className={className}>
+    <path d="M7 4v16 M3.5 7.5 7 4l3.5 3.5 M17 20V4 M13.5 16.5 17 20l3.5-3.5" />
+  </svg>
+);
+
+export const WheelchairIcon = ({ className }: P) => (
+  <svg {...big} {...stroke} className={className}>
+    <circle cx="10" cy="4" r="1.6" />
+    <path d="M10 7v6h6l2.5 5 M10 10h5 M8 10.5a5.5 5.5 0 1 0 7.5 7" />
+  </svg>
+);
+
+export const ChevronIcon = ({ className }: P) => (
+  <svg {...big} {...stroke} className={className}>
+    <path d="m9 5 7 7-7 7" />
+  </svg>
+);

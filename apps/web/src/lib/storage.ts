@@ -69,6 +69,11 @@ export function useLocationOptIn(): [boolean, (v: boolean) => void] {
   return useStored<boolean>('twalk.location.optin.v1', false);
 }
 
+/** Step-free mode: applied to trip planning (and, later, everywhere routes are chosen). */
+export function useStepFree(): [boolean, (v: boolean) => void] {
+  return useStored<boolean>('twalk.stepfree.v1', false);
+}
+
 export interface MapLayers {
   vehicles: boolean;
   stops: boolean;

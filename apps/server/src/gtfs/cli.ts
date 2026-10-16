@@ -10,6 +10,7 @@ const result = await refreshGtfs({
   dataDir: config.dataDir,
   userAgent: config.userAgent,
   localSource: config.gtfsDir ?? undefined,
+  force: process.argv.includes('--force'),
   log: (m) => console.log(m),
 });
 console.log(

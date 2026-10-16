@@ -7,6 +7,9 @@ stop, and a live map of every train, bus and boat around you.
   and the time-zone tests.
 - **Phase 2:** the live map (`/map`), Saved stops, the Stitch design
   (`design/stitch/`), and Bluebikes.
+- **Phase 3:** the door-to-door trip planner (`/trips`) on OpenTripPlanner 2.10,
+  with live data, four ways to sort, step-free mode, transfer risk, fares and
+  "What if I miss it?".
 
 Accuracy rules:
 
@@ -110,6 +113,49 @@ Secrets live only in `.env`, which is git-ignored.
 - The MapLibre bundle (~295 KB gzipped) loads only when the Map tab is opened,
   and is not precached at install.
 
+## Trip planner (OpenTripPlanner)
+
+OTP 2.10 needs **Java 25** (Eclipse Temurin: `winget install EclipseAdoptium.Temurin.25.JDK`).
+
+```bash
+npm run otp:fetch     # OTP jar (sha1-checked), Massachusetts + Rhode Island OSM (md5-checked), MBTA GTFS
+npm run otp:build     # graph build: about 3.5 min and a 5 GB heap here (Massachusetts + Rhode Island)
+npm run otp:serve     # http://127.0.0.1:8080 (GraphQL /otp/gtfs/v1, debug UI at /)
+```
+
+Configs are in `otp/*.json`. They are copied next to the data in `otp/data/` (git-ignored) before each run.
+OTP polls the MBTA's public GTFS-realtime feeds itself (trip updates and vehicle positions every 15 s, alerts every 30 s), so it needs no key.
+Rhode Island is included because Commuter Rail runs to Providence and Wickford Junction.
+
+`/api/plan` asks OTP the question three ways in parallel and merges the answers:
+- fastest
+- less walking (walk reluctance 6)
+- fewer transfers (transfer cost 20 min)
+
+Step-free mode turns on OTP's wheelchair routing for all three.
+
+- **Labels:** OTP doesn't know the MBTA's "uncertainty 300" code (schedule-based), so each ride is relabelled from our own live store: Live, Estimate or Scheduled. Subway legs with no matching prediction are Scheduled, because the MBTA runs most subway trips as unscheduled (ADDED) trips.
+- **Transfer risk:** the spare time after the walk between rides, against how far the incoming arrival could still move: 1 min for a live train, 2 min for a live bus, 3 min for an estimate, 3–5 min for a timetable time. Shown as Easy, Tight or Risky transfer, with an icon and a word. A risky trip suggests a safer one arriving up to 12 min later. There's no history yet (Phase 6), and the app says so.
+- **Walk it:** walking all the way is kept when it's under 40 min, or within 5 min of the fastest ride.
+- **"What if I miss it?":** re-plans from that ride's stop one minute after it leaves.
+- **Fares:** each ride's single fare comes from the MBTA's own fare tables, through OTP's GTFS Fares v2 support (`FaresV2` flag, `fares: "gtfs"`). The quoted fare is tap-to-pay, the same as CharlieCard, never the $0 "Free fare" product for qualifying riders. Transfers come from the configurable table in `config/fares.json`, keyed by each route's MBTA fare class:
+  - free: subway↔subway, bus↔bus, subway→bus
+  - pay the difference: bus→subway
+  - no transfer discount: Commuter Rail and ferries
+  - window: 2 hours
+
+  OTP's own totals aren't used, because they ignore the MBTA's fare-medium transfer rules: subway then bus came out as $4.10 instead of $2.40. A ride without a price shows no total rather than a guess.
+- **Stay on board:** when a bus or train carries on as a new trip number (e.g. SL1), it's shown as "Stay on board", not counted as a transfer.
+- **Places:** our stops first, then Photon (photon.komoot.io, OpenStreetMap data) for addresses and places. Photon is used because Nominatim's usage policy doesn't allow search-as-you-type. Requests are proxied, cached for 24 h, spaced at least 250 ms apart, biased to where you are and kept to the MBTA area. If Photon is down, stops and stations still work.
+
+`tools/fake-otp.ts` stands in for OTP and Photon (it answers with `fixtures/otp/plan.json`, moved to the time asked). The tests and end-to-end tests use it; you can too:
+
+```bash
+node tools/fake-otp.ts 8792
+```
+
+Then start the server with `OTP_URL=http://127.0.0.1:8792` and `PHOTON_URL=http://127.0.0.1:8792/api/`.
+
 ## How live data flows
 
 ```
@@ -141,8 +187,9 @@ cdn.mbta.com ─poll─┘  GTFS-realtime: no-key mode, and fallback when a V3 s
 ## Tests
 
 ```bash
-npm test                    # Vitest: core, motion, adapters, replay scenarios, API, map (99 tests)
-npm run test:e2e            # builds, then Playwright on two replay servers (11 tests, incl. axe on Now and Map)
+npm test                    # Vitest: core, motion, trips, fares, adapters, replay, API, map, planner (132 tests)
+npm run smoke:plan          # real trips through a running server and OTP
+npm run test:e2e            # builds, then Playwright with replay servers and a stand-in OTP (15 tests, axe on Now, Map, Trips)
 npm run lighthouse          # builds, then a mobile Lighthouse run of Now on the replay
 npm run lighthouse -- map   # the same for the Map screen
 npm run typecheck && npm run lint
@@ -201,8 +248,9 @@ on Lighthouse's 4× slowed CPU. Ways to bring it up are listed under known gaps.
 - **Alerts and elevator status** need `MBTA_API_KEY` (the V3 stream).
 - **The V3 streaming path is untested against live data** until a key is set;
   the GTFS-realtime path is what ran on live data.
-- **Walking times are straight-line × 1.3** until OpenTripPlanner (Phase 3).
-  The map's walk circle is labelled "about".
+- **Walking times on Now and the map are still straight-line × 1.3** (labelled "about"). The trip planner's walks use real streets.
+- **Planning far ahead shows scheduled times**: live labels only exist for the next hour or so of predictions.
+- **The graph needs rebuilding** (`npm run otp:build`, about 3.5 min, 5 GB of memory) when the MBTA publishes a new GTFS feed. That isn't automated yet.
 - **The MassDOT Developers License** hasn't been read yet. Read it before anything goes public.
 
 ## Privacy

@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from 'react';
 
-export type Tab = 'now' | 'map' | 'saved';
+export type Tab = 'now' | 'map' | 'trips' | 'saved';
 
 const listeners = new Set<() => void>();
 window.addEventListener('popstate', () => listeners.forEach((l) => l()));
@@ -26,6 +26,7 @@ export function navigate(path: string, opts: { replace?: boolean } = {}): void {
 export function tabOf(path: string): Tab {
   if (path.startsWith('/map')) return 'map';
   if (path.startsWith('/saved')) return 'saved';
+  if (path.startsWith('/trips')) return 'trips';
   return 'now';
 }
 

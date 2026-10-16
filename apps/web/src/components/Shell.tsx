@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { navigate, type Tab } from '../lib/router.ts';
-import { BookmarkIcon, MapIcon, NowIcon, WalkIcon } from './icons.tsx';
+import { BookmarkIcon, MapIcon, NowIcon, RouteIcon, WalkIcon } from './icons.tsx';
 
 export function AppHeader({ title, children, overlay = false }: { title: string; children?: ReactNode; overlay?: boolean }) {
   return (
@@ -25,6 +25,7 @@ export function AppHeader({ title, children, overlay = false }: { title: string;
 const TABS: { tab: Tab; path: string; label: string; Icon: typeof NowIcon }[] = [
   { tab: 'now', path: '/', label: 'Now', Icon: NowIcon },
   { tab: 'map', path: '/map', label: 'Map', Icon: MapIcon },
+  { tab: 'trips', path: '/trips', label: 'Trips', Icon: RouteIcon },
   { tab: 'saved', path: '/saved', label: 'Saved', Icon: BookmarkIcon },
 ];
 
@@ -48,7 +49,7 @@ export function TabBar({ current }: { current: Tab }) {
                   e.preventDefault();
                   navigate(path);
                 }}
-                className={`flex min-h-12 min-w-20 flex-col items-center justify-center gap-0.5 rounded-xl px-3 text-xs ${
+                className={`flex min-h-12 min-w-16 flex-col items-center justify-center gap-0.5 rounded-xl px-3 text-xs ${
                   active ? 'text-brand-text font-extrabold' : 'text-muted font-semibold'
                 }`}
               >

@@ -1,0 +1,38 @@
+{
+  "routingDefaults": {
+    "numItineraries": 5,
+    "transferSlack": "PT1M",
+    "walk": { "speed": 1.25, "reluctance": 2.0, "stairsReluctance": 1.65 },
+    "wheelchairAccessibility": {
+      "trip": { "onlyConsiderAccessible": true },
+      "stop": { "onlyConsiderAccessible": true },
+      "elevator": { "onlyConsiderAccessible": false, "unknownCost": 20, "inaccessibleCost": 3600 },
+      "inaccessibleStreetReluctance": 25,
+      "maxSlope": 0.083,
+      "slopeExceededReluctance": 1,
+      "stairsReluctance": 100
+    }
+  },
+  "updaters": [
+    {
+      "type": "stop-time-updater",
+      "url": "https://cdn.mbta.com/realtime/TripUpdates.pb",
+      "feedId": "mbta",
+      "frequency": "PT15S",
+      "backwardsDelayPropagationType": "required-no-data"
+    },
+    {
+      "type": "vehicle-positions",
+      "url": "https://cdn.mbta.com/realtime/VehiclePositions.pb",
+      "feedId": "mbta",
+      "frequency": "PT15S",
+      "features": ["position", "occupancy"]
+    },
+    {
+      "type": "real-time-alerts",
+      "url": "https://cdn.mbta.com/realtime/Alerts.pb",
+      "feedId": "mbta",
+      "frequency": "PT30S"
+    }
+  ]
+}

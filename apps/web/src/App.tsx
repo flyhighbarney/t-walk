@@ -8,6 +8,7 @@ import NowScreen from './screens/NowScreen.tsx';
 import SavedScreen from './screens/SavedScreen.tsx';
 
 const MapScreen = lazy(() => import('./screens/map/MapScreen.tsx'));
+const TripsScreen = lazy(() => import('./screens/trips/TripsScreen.tsx'));
 
 export default function App() {
   const path = useLocationPath();
@@ -16,6 +17,11 @@ export default function App() {
     <>
       {tab === 'now' ? <NowScreen /> : null}
       {tab === 'saved' ? <SavedScreen /> : null}
+      {tab === 'trips' ? (
+        <Suspense fallback={<p className="text-muted p-6 text-center">Loading the trip planner…</p>}>
+          <TripsScreen path={path} />
+        </Suspense>
+      ) : null}
       {tab === 'map' ? (
         <Suspense fallback={<p className="text-muted p-6 text-center">Loading the map…</p>}>
           <MapScreen path={path} />

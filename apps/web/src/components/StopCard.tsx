@@ -1,7 +1,7 @@
 import { formatWalk, type LiveStatus, type RouteInfo, type StopBoard, type StopSummary, type WalkEstimate } from '@twalk/core';
 import { navigate } from '../lib/router.ts';
 import { DepartureGroupView } from './Departures.tsx';
-import { MapIcon, StarIcon, WalkIcon } from './icons.tsx';
+import { MapIcon, RouteIcon, StarIcon, WalkIcon } from './icons.tsx';
 import { chipColors } from './RouteChip.tsx';
 
 export function StopCard(props: {
@@ -75,19 +75,32 @@ export function StopCard(props: {
           ))}
         </div>
       )}
-      {props.showMapLink !== false ? (
-        <a
-          href={`/map?stop=${encodeURIComponent(stop.id)}`}
-          onClick={(e) => {
-            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-            e.preventDefault();
-            navigate(`/map?stop=${encodeURIComponent(stop.id)}`);
-          }}
-          className="text-brand-text mt-3 inline-flex min-h-11 items-center gap-1.5 text-sm font-bold"
-        >
-          <MapIcon className="size-4" /> Show on map
-        </a>
-      ) : null}
+      <div className="mt-3 flex flex-wrap gap-x-5">
+        {props.showMapLink !== false ? (
+          <InAppLink href={`/map?stop=${encodeURIComponent(stop.id)}`}>
+            <MapIcon className="size-4" /> Show on map
+          </InAppLink>
+        ) : null}
+        <InAppLink href={`/trips?from=${stop.latitude.toFixed(5)},${stop.longitude.toFixed(5)}&fromName=${encodeURIComponent(stop.name)}`}>
+          <RouteIcon className="size-4" /> Plan from here
+        </InAppLink>
+      </div>
     </article>
+  );
+}
+
+function InAppLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        navigate(href);
+      }}
+      className="text-brand-text inline-flex min-h-11 items-center gap-1.5 text-sm font-bold"
+    >
+      {children}
+    </a>
   );
 }

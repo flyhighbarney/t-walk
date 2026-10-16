@@ -1,6 +1,9 @@
 // T-Walk server: the only thing that talks to the MBTA.
 
-import { loadConfig } from './config.ts';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { FareRules } from '@twalk/core';
+import { loadConfig, REPO_ROOT } from './config.ts';
 import { GtfsDb } from './gtfs/db.ts';
 import { currentDbPath, pruneOldDatabases, refreshGtfs } from './gtfs/import.ts';
 import { buildApp } from './api/app.ts';
@@ -10,6 +13,8 @@ import { Ingest } from './live/ingest.ts';
 import { LiveManager } from './live/manager.ts';
 import { Recorder } from './live/recorder.ts';
 import { BikesFeed } from './live/bikes.ts';
+import { Planner } from './plan/planner.ts';
+import { Geocoder } from './plan/geocode.ts';
 import { loadRecording, ReplayDriver } from './live/replay.ts';
 import { LiveStore } from './live/store.ts';
 
@@ -73,7 +78,10 @@ const bikes = replayEvents ? null : new BikesFeed({ userAgent: config.userAgent,
 bikes?.start();
 
 const boards = new Boards({ getDb: () => db, store, ingest, clock });
-const app = await buildApp({ getDb: () => db, boards, store, bikes, clock, webDist: config.webDist, logger: false });
+const fareRules = JSON.parse(readFileSync(join(REPO_ROOT, 'config', 'fares.json'), 'utf8')) as FareRules;
+const planner = new Planner({ otpUrl: config.otpUrl, getDb: () => db, store, ingest, clock, fareRules });
+const geocoder = new Geocoder({ userAgent: config.userAgent, getDb: () => db, baseUrl: config.photonUrl });
+const app = await buildApp({ getDb: () => db, boards, store, bikes, planner, geocoder, clock, webDist: config.webDist, logger: false });
 await app.listen({ port: config.port, host: config.host });
 log(`Listening on http://${config.host}:${config.port}`);
 

@@ -33,6 +33,8 @@ export interface RouteInfo {
   sortOrder: number;
   /** False for routes the MBTA doesn't list, mostly diversion shuttles. */
   listed: boolean;
+  /** The MBTA's route_fare_class ("Rapid Transit", "Local Bus", …), for fares. */
+  fareClass: string | null;
   /** direction_id → "Outbound" / "Southbound"… */
   directionNames: [string, string];
   /** direction_id → "Ashmont/Braintree"… */

@@ -1,0 +1,13 @@
+{
+  "about": "MBTA transfer rules for tap-to-pay (contactless) and CharlieCard, by the route_fare_class in the MBTA's GTFS routes.txt. Single-ride prices are not here: they come from the MBTA's own fare tables through OpenTripPlanner, so they stay current. Checked against the MBTA's fare_transfer_rules.txt on 2026-10-16.",
+  "transferWindowMinutes": 120,
+  "transfers": [
+    { "from": "Local Bus", "to": "Local Bus", "pay": "nothing" },
+    { "from": "Rapid Transit", "to": "Rapid Transit", "pay": "nothing" },
+    { "from": "Rapid Transit", "to": "Local Bus", "pay": "nothing" },
+    { "from": "Local Bus", "to": "Rapid Transit", "pay": "difference" },
+    { "from": "Free", "to": "Local Bus", "pay": "full" },
+    { "from": "Free", "to": "Rapid Transit", "pay": "full" }
+  ],
+  "noTransferDiscount": ["Commuter Rail", "Ferry", "Express Bus"]
+}

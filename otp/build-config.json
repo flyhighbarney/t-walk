@@ -1,0 +1,7 @@
+{
+  "transitFeeds": [{ "type": "gtfs", "feedId": "mbta", "source": "mbta.gtfs.zip" }],
+  "osmDefaults": { "timeZone": "America/New_York", "osmTagMapping": "default" },
+  "osm": [{ "source": "massachusetts.osm.pbf" }, { "source": "rhode-island.osm.pbf" }],
+  "transferRequests": [{ "modes": "WALK" }, { "modes": "WALK", "wheelchairAccessibility": { "enabled": true } }],
+  "fares": "gtfs"
+}

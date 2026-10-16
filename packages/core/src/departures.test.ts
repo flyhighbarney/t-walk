@@ -16,6 +16,7 @@ const route = (id: string, mode: RouteInfo['mode'], sortOrder: number): RouteInf
   textColor: 'FFFFFF',
   sortOrder,
   listed: true,
+  fareClass: null,
   directionNames: ['Outbound', 'Inbound'],
   directionDestinations: [`${id} out`, `${id} in`],
 });

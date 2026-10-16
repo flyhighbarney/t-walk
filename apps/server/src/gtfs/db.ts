@@ -109,7 +109,7 @@ export class GtfsDb {
     }
     const map = new Map<string, RouteInfo>();
     for (const r of this.db.prepare('SELECT * FROM routes').all() as {
-      route_id: string; route_type: number; short_name: string; long_name: string; color: string; text_color: string; sort_order: number; listed: number;
+      route_id: string; route_type: number; short_name: string; long_name: string; color: string; text_color: string; sort_order: number; listed: number; fare_class: string | null;
     }[]) {
       const d0 = dirs.get(`${r.route_id}|0`);
       const d1 = dirs.get(`${r.route_id}|1`);
@@ -122,6 +122,7 @@ export class GtfsDb {
         textColor: r.text_color,
         sortOrder: r.sort_order,
         listed: r.listed === 1,
+        fareClass: r.fare_class ?? null,
         directionNames: [d0?.direction ?? 'Outbound', d1?.direction ?? 'Inbound'],
         directionDestinations: [d0?.destination ?? '', d1?.destination ?? ''],
       });

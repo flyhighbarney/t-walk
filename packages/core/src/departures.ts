@@ -115,7 +115,8 @@ export function liveUsable(health: FeedHealth, now: number): boolean {
   return health.state !== 'down' && age != null && age <= DOWN_AFTER_SECONDS;
 }
 
-function sourceFor(p: Prediction, mode: Mode): DepartureSource | 'drop' {
+/** Live, schedule-based estimate, or not to be shown, by the MBTA's uncertainty codes. */
+export function sourceFor(p: Prediction, mode: Mode): DepartureSource | 'drop' {
   if (isSubway(mode)) return 'live'; // 60/120/360 on subway are all real predictions
   const u = p.departureUncertainty ?? p.arrivalUncertainty;
   if (u == null || u < 300) return 'live';

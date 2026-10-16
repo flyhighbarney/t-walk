@@ -15,6 +15,9 @@ const server = (port: number, scenario: string, fakeNow: string) => ({
     REPLAY_FILE: `fixtures/replay/${scenario}.ndjson`,
     FAKE_NOW: fakeNow,
     MBTA_API_KEY: '',
+    // A stand-in OpenTripPlanner and Photon (tools/fake-otp.ts).
+    OTP_URL: 'http://127.0.0.1:8792',
+    PHOTON_URL: 'http://127.0.0.1:8792/api/',
   },
 });
 
@@ -30,6 +33,7 @@ export default defineConfig({
     locale: 'en-US',
   },
   webServer: [
+    { command: 'node tools/fake-otp.ts 8792', port: 8792, reuseExistingServer: false, timeout: 20_000 },
     server(8790, 'normal', '2026-10-15T08:00:00-04:00'),
     server(8791, 'outage', '2026-10-15T08:05:00-04:00'),
   ],

@@ -4,11 +4,14 @@
 
 import { gtfsTimeToSeconds } from '@twalk/core';
 
+/** Bump when the tables below change: older databases are re-imported. */
+export const SCHEMA_VERSION = 2;
+
 export const SCHEMA = `
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE routes (
   route_id TEXT PRIMARY KEY, route_type INTEGER, short_name TEXT, long_name TEXT,
-  color TEXT, text_color TEXT, sort_order INTEGER, listed INTEGER
+  color TEXT, text_color TEXT, sort_order INTEGER, listed INTEGER, fare_class TEXT
 );
 CREATE TABLE directions (route_id TEXT, direction_id INTEGER, direction TEXT, destination TEXT,
   PRIMARY KEY (route_id, direction_id));
@@ -97,7 +100,7 @@ export const FILES: FileSpec[] = [
     file: 'routes.txt',
     table: 'routes',
     required: true,
-    columns: ['route_id', 'route_type', 'short_name', 'long_name', 'color', 'text_color', 'sort_order', 'listed'],
+    columns: ['route_id', 'route_type', 'short_name', 'long_name', 'color', 'text_color', 'sort_order', 'listed', 'fare_class'],
     map: (r) => [
       text(r.route_id),
       int(r.route_type),
@@ -108,6 +111,7 @@ export const FILES: FileSpec[] = [
       int(r.route_sort_order) ?? 0,
       // MBTA: listed_route = 1 means "not listed" (shuttles, special routes).
       r.listed_route === '1' ? 0 : 1,
+      text(r.route_fare_class),
     ],
   },
   {

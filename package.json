@@ -22,7 +22,11 @@
     "smoke:live": "node --disable-warning=ExperimentalWarning tools/smoke-live.ts",
     "lighthouse": "npm run build && node --no-deprecation tools/lighthouse.ts",
     "fixtures": "node tools/replay/make-fixtures.ts",
-    "icons": "node tools/make-icons.ts"
+    "icons": "node tools/make-icons.ts",
+    "otp:fetch": "node tools/otp.ts fetch",
+    "otp:build": "node tools/otp.ts build",
+    "otp:serve": "node tools/otp.ts serve",
+    "smoke:plan": "node tools/smoke-plan.ts"
   },
   "engines": {
     "node": ">=24"

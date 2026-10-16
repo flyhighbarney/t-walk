@@ -1,0 +1,98 @@
+{
+  "data": {
+    "planConnection": {
+      "routingErrors": [],
+      "edges": [
+        {
+          "node": {
+            "start": "2026-10-15T08:02:00-04:00",
+            "end": "2026-10-15T08:44:00-04:00",
+            "duration": 2520,
+            "walkDistance": 900,
+            "numberOfTransfers": 1,
+            "legs": [
+              {
+                "mode": "WALK", "transitLeg": false, "realTime": false, "duration": 240, "distance": 300, "headsign": null,
+                "start": { "scheduledTime": "2026-10-15T08:02:00-04:00", "estimated": null },
+                "end": { "scheduledTime": "2026-10-15T08:06:00-04:00", "estimated": null },
+                "from": { "name": "Start", "lat": 42.3580, "lon": -71.0640, "stop": null },
+                "to": { "name": "Park Street", "lat": 42.356395, "lon": -71.062424, "stop": { "gtfsId": "mbta:70075", "platformCode": null } },
+                "route": null, "trip": null,
+                "legGeometry": { "points": "" },
+                "steps": [
+                  { "relativeDirection": "DEPART", "streetName": "Tremont Street", "absoluteDirection": "SOUTH", "distance": 180 },
+                  { "relativeDirection": "LEFT", "streetName": "Park Street", "absoluteDirection": "EAST", "distance": 120 },
+                  { "relativeDirection": "ENTER_STATION", "streetName": "Park Street", "absoluteDirection": null, "distance": 0 }
+                ],
+                "intermediatePlaces": null, "alerts": [], "fareProducts": []
+              },
+              {
+                "mode": "SUBWAY", "transitLeg": true, "realTime": false, "duration": 240, "distance": 1200, "headsign": "Braintree",
+                "start": { "scheduledTime": "2026-10-15T08:10:00-04:00", "estimated": null },
+                "end": { "scheduledTime": "2026-10-15T08:14:00-04:00", "estimated": null },
+                "from": { "name": "Park Street", "lat": 42.356395, "lon": -71.062424, "stop": { "gtfsId": "mbta:70075", "platformCode": null } },
+                "to": { "name": "South Station", "lat": 42.352271, "lon": -71.055242, "stop": { "gtfsId": "mbta:NEC-2287", "platformCode": "3" } },
+                "route": { "gtfsId": "mbta:Red", "shortName": "", "longName": "Red Line", "color": "DA291C", "textColor": "FFFFFF" },
+                "trip": { "gtfsId": "mbta:R-0810", "tripHeadsign": "Braintree" },
+                "legGeometry": { "points": "" },
+                "steps": [], "intermediatePlaces": [{ "name": "Downtown Crossing" }],
+                "alerts": [{ "alertHeaderText": "Red Line: expect minor delays" }],
+                "fareProducts": [{ "id": "subway-2.40", "product": { "name": "Subway fare", "price": { "amount": 2.4, "currency": { "code": "USD" } } } }]
+              },
+              {
+                "mode": "WALK", "transitLeg": false, "realTime": false, "duration": 120, "distance": 150, "headsign": null,
+                "start": { "scheduledTime": "2026-10-15T08:14:00-04:00", "estimated": null },
+                "end": { "scheduledTime": "2026-10-15T08:16:00-04:00", "estimated": null },
+                "from": { "name": "South Station", "lat": 42.352271, "lon": -71.055242, "stop": { "gtfsId": "mbta:NEC-2287", "platformCode": "3" } },
+                "to": { "name": "Massachusetts Ave @ Tremont St", "lat": 42.357, "lon": -71.063, "stop": { "gtfsId": "mbta:B1", "platformCode": null } },
+                "route": null, "trip": null, "legGeometry": { "points": "" }, "steps": [], "intermediatePlaces": null, "alerts": [], "fareProducts": []
+              },
+              {
+                "mode": "BUS", "transitLeg": true, "realTime": true, "duration": 1260, "distance": 6000, "headsign": "Harvard",
+                "start": { "scheduledTime": "2026-10-15T08:19:00-04:00", "estimated": { "time": "2026-10-15T08:19:00-04:00", "delay": "PT0S" } },
+                "end": { "scheduledTime": "2026-10-15T08:40:00-04:00", "estimated": { "time": "2026-10-15T08:40:00-04:00", "delay": "PT0S" } },
+                "from": { "name": "Massachusetts Ave @ Tremont St", "lat": 42.357, "lon": -71.063, "stop": { "gtfsId": "mbta:B1", "platformCode": null } },
+                "to": { "name": "Harvard Square", "lat": 42.3732, "lon": -71.1189, "stop": { "gtfsId": "mbta:B9", "platformCode": null } },
+                "route": { "gtfsId": "mbta:1", "shortName": "1", "longName": "Harvard Square - Nubian Station", "color": "FFC72C", "textColor": "000000" },
+                "trip": { "gtfsId": "mbta:B-0805", "tripHeadsign": "Harvard" },
+                "legGeometry": { "points": "_p~iF~ps|U_ulLnnqC" },
+                "steps": [], "intermediatePlaces": [{ "name": "a" }, { "name": "b" }, { "name": "c" }],
+                "alerts": [],
+                "fareProducts": [{ "id": "subway-2.40", "product": { "name": "Subway fare", "price": { "amount": 2.4, "currency": { "code": "USD" } } } }]
+              },
+              {
+                "mode": "WALK", "transitLeg": false, "realTime": false, "duration": 240, "distance": 300, "headsign": null,
+                "start": { "scheduledTime": "2026-10-15T08:40:00-04:00", "estimated": null },
+                "end": { "scheduledTime": "2026-10-15T08:44:00-04:00", "estimated": null },
+                "from": { "name": "Harvard Square", "lat": 42.3732, "lon": -71.1189, "stop": { "gtfsId": "mbta:B9", "platformCode": null } },
+                "to": { "name": "Destination", "lat": 42.3740, "lon": -71.1170, "stop": null },
+                "route": null, "trip": null, "legGeometry": { "points": "" }, "steps": [], "intermediatePlaces": null, "alerts": [], "fareProducts": []
+              }
+            ]
+          }
+        },
+        {
+          "node": {
+            "start": "2026-10-15T08:00:00-04:00",
+            "end": "2026-10-15T08:36:00-04:00",
+            "duration": 2160,
+            "walkDistance": 2700,
+            "numberOfTransfers": 0,
+            "legs": [
+              {
+                "mode": "WALK", "transitLeg": false, "realTime": false, "duration": 2160, "distance": 2700, "headsign": null,
+                "start": { "scheduledTime": "2026-10-15T08:00:00-04:00", "estimated": null },
+                "end": { "scheduledTime": "2026-10-15T08:36:00-04:00", "estimated": null },
+                "from": { "name": "Start", "lat": 42.3580, "lon": -71.0640, "stop": null },
+                "to": { "name": "Destination", "lat": 42.3740, "lon": -71.1170, "stop": null },
+                "route": null, "trip": null, "legGeometry": { "points": "" },
+                "steps": [{ "relativeDirection": "DEPART", "streetName": "Cambridge Street", "absoluteDirection": "WEST", "distance": 2700 }],
+                "intermediatePlaces": null, "alerts": [], "fareProducts": []
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

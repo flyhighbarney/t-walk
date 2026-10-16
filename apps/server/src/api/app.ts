@@ -28,12 +28,17 @@ import type { LiveStore } from '../live/store.ts';
 import type { Boards } from './boards.ts';
 import { registerMapRoutes } from './map.ts';
 import { openSse } from './sse.ts';
+import type { Planner } from '../plan/planner.ts';
+import type { Geocoder } from '../plan/geocode.ts';
+import { registerPlanRoutes } from '../plan/routes.ts';
 
 export interface AppDeps {
   getDb: () => GtfsDb;
   boards: Boards;
   store: LiveStore;
   bikes?: BikesFeed | null;
+  planner?: Planner | null;
+  geocoder?: Geocoder | null;
   clock: Clock;
   webDist?: string | null;
   logger?: boolean;
@@ -60,6 +65,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.get('/api/health', async () => boards.status());
 
   registerMapRoutes(app, { getDb: deps.getDb, store: deps.store, boards, clock, bikes: deps.bikes ?? null });
+  if (deps.planner && deps.geocoder) registerPlanRoutes(app, { planner: deps.planner, geocoder: deps.geocoder });
 
   app.get<{ Querystring: { lat?: string; lon?: string; radius?: string; limit?: string; pace?: string } }>(
     '/api/nearby',

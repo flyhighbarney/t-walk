@@ -11,7 +11,7 @@ import { createWriteStream } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { parse } from 'csv-parse';
 import yauzl from 'yauzl';
-import { FILES, POST_IMPORT, SCHEMA } from './schema.ts';
+import { FILES, POST_IMPORT, SCHEMA, SCHEMA_VERSION } from './schema.ts';
 
 export const GTFS_URL = 'https://cdn.mbta.com/MBTA_GTFS.zip';
 
@@ -21,6 +21,8 @@ interface Pointer {
   lastModified: string | null;
   importedAt: string;
   feedVersion: string | null;
+  /** The table layout it was imported with. */
+  schemaVersion?: number;
 }
 
 const pointerPath = (dataDir: string) => join(dataDir, 'gtfs-current.json');
@@ -33,10 +35,11 @@ export async function readPointer(dataDir: string): Promise<Pointer | null> {
   }
 }
 
-/** Path of the database the server should open, or null before the first import. */
+/** Path of the database the server should open, or null before the first import (or when its layout is out of date). */
 export async function currentDbPath(dataDir: string): Promise<string | null> {
   const p = await readPointer(dataDir);
-  return p && existsSync(join(dataDir, p.db)) ? join(dataDir, p.db) : null;
+  if (!p || (p.schemaVersion ?? 1) !== SCHEMA_VERSION) return null;
+  return existsSync(join(dataDir, p.db)) ? join(dataDir, p.db) : null;
 }
 
 type Opener = (file: string) => Promise<Readable | null>;
@@ -124,6 +127,8 @@ export async function refreshGtfs(opts: {
   url?: string;
   /** Import this folder or zip instead of downloading (tests, offline dev). */
   localSource?: string;
+  /** Import even if the feed hasn't changed. */
+  force?: boolean;
   log?: (msg: string) => void;
 }): Promise<RefreshResult> {
   const log = opts.log ?? (() => {});
@@ -137,7 +142,8 @@ export async function refreshGtfs(opts: {
 
   if (!source) {
     const headers: Record<string, string> = { 'User-Agent': opts.userAgent };
-    if (prev && prevDb && existsSync(prevDb)) {
+    const upToDate = (prev?.schemaVersion ?? 1) === SCHEMA_VERSION;
+    if (prev && prevDb && existsSync(prevDb) && upToDate && !opts.force) {
       if (prev.etag) headers['If-None-Match'] = prev.etag;
       if (prev.lastModified) headers['If-Modified-Since'] = prev.lastModified;
     }
@@ -160,7 +166,7 @@ export async function refreshGtfs(opts: {
   const feedVersion = await importGtfs(source, tmp, log);
   await rename(tmp, dbPath);
 
-  const pointer: Pointer = { db: name, etag, lastModified, importedAt: new Date().toISOString(), feedVersion };
+  const pointer: Pointer = { db: name, etag, lastModified, importedAt: new Date().toISOString(), feedVersion, schemaVersion: SCHEMA_VERSION };
   await writeFile(`${pointerPath(opts.dataDir)}.tmp`, JSON.stringify(pointer, null, 2));
   await rename(`${pointerPath(opts.dataDir)}.tmp`, pointerPath(opts.dataDir));
   log(`GTFS ${feedVersion ?? ''} ready: ${name}`);

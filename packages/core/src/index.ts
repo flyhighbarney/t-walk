@@ -8,3 +8,5 @@ export * from './departures.ts';
 export * from './wire.ts';
 export * from './geo.ts';
 export * from './motion.ts';
+export * from './trip.ts';
+export * from './fares.ts';

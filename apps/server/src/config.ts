@@ -18,6 +18,10 @@ export interface Config {
   recordDir: string | null;
   /** Serve the built web app from here, if it exists. */
   webDist: string;
+  /** OpenTripPlanner's base URL. */
+  otpUrl: string;
+  /** Photon's search endpoint (a stand-in in tests). */
+  photonUrl: string;
 }
 
 const fromRoot = (p: string) => resolve(REPO_ROOT, p);
@@ -36,5 +40,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     fakeNow,
     recordDir: env.RECORD_DIR ? fromRoot(env.RECORD_DIR) : null,
     webDist: fromRoot(env.WEB_DIST ?? 'apps/web/dist'),
+    otpUrl: (env.OTP_URL ?? 'http://127.0.0.1:8080').replace(/\/+$/, ''),
+    photonUrl: env.PHOTON_URL ?? 'https://photon.komoot.io/api/',
   };
 }
