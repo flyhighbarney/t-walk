@@ -16,7 +16,7 @@ m.start();
 await new Promise((r) => setTimeout(r, 6000));
 console.log('predictions', store.predictions.items.size, 'vehicles', store.vehicles.items.size);
 const boards = new Boards({ getDb: () => db, store, ingest, clock: systemClock });
-const app = await buildApp({ getDb: () => db, boards, clock: systemClock });
+const app = await buildApp({ getDb: () => db, boards, store, clock: systemClock });
 const t = performance.now();
 const res = await app.inject({ url: `/api/nearby?lat=${process.argv[2] ?? 42.3564}&lon=${process.argv[3] ?? -71.0624}&limit=5` });
 const body = res.json();

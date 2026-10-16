@@ -289,6 +289,73 @@ export class GtfsDb {
     return out;
   }
 
+  private tripShapeCache = new Map<string, string | null>();
+
+  /** The GTFS shape a scheduled trip follows; null for trips not in the schedule (ADDED). */
+  tripShapeId(tripId: string): string | null {
+    let s = this.tripShapeCache.get(tripId);
+    if (s === undefined) {
+      const row = this.db.prepare('SELECT shape_id FROM trips WHERE trip_id = ?').get(tripId) as { shape_id: string | null } | undefined;
+      s = row?.shape_id ?? null;
+      if (this.tripShapeCache.size > 50_000) this.tripShapeCache.clear();
+      this.tripShapeCache.set(tripId, s);
+    }
+    return s;
+  }
+
+  /**
+   * The shapes worth drawing for a route: per direction, the most-used one
+   * plus any other used by at least 15% of that direction's trips (branches).
+   */
+  routeShapes(routeId: string): { shapeId: string; directionId: 0 | 1; main: boolean; coords: [number, number][] }[] {
+    const usage = this.db
+      .prepare('SELECT shape_id, direction_id, COUNT(*) AS n FROM trips WHERE route_id = ? AND shape_id IS NOT NULL GROUP BY shape_id, direction_id ORDER BY n DESC')
+      .all(routeId) as { shape_id: string; direction_id: number; n: number }[];
+    const points = this.db.prepare('SELECT lon, lat FROM shapes WHERE shape_id = ? ORDER BY seq');
+    const out: { shapeId: string; directionId: 0 | 1; main: boolean; coords: [number, number][] }[] = [];
+    for (const dir of [0, 1] as const) {
+      const rows = usage.filter((u) => u.direction_id === dir);
+      const total = rows.reduce((a, r) => a + r.n, 0);
+      rows.forEach((r, i) => {
+        if (i > 0 && r.n / total < 0.15) return;
+        const coords = (points.all(r.shape_id) as { lon: number; lat: number }[]).map((p) => [p.lon, p.lat] as [number, number]);
+        if (coords.length >= 2) out.push({ shapeId: r.shape_id, directionId: dir, main: i === 0, coords });
+      });
+    }
+    return out;
+  }
+
+  /** Every station and stop served by rail or ferry, for the map. */
+  railStops(): StopSummary[] {
+    const rows = this.db
+      .prepare(
+        `SELECT DISTINCT s.* FROM stops s JOIN stop_routes sr ON sr.stop_id = s.stop_id JOIN routes r ON r.route_id = sr.route_id
+         WHERE r.route_type IN (0, 1, 2, 4) AND r.listed = 1`,
+      )
+      .all() as unknown as StopRow[];
+    return rows.map((r) => this.summary(r));
+  }
+
+  /** Bus stops inside a box (for the map at street zoom). */
+  busStopsIn(west: number, south: number, east: number, north: number, limit: number): StopSummary[] {
+    const rows = this.db
+      .prepare(
+        `SELECT s.* FROM stops s WHERE s.lat BETWEEN ? AND ? AND s.lon BETWEEN ? AND ? AND s.location_type = 0
+           AND (s.parent_station IS NULL OR s.parent_station = '')
+           AND EXISTS (SELECT 1 FROM stop_routes sr JOIN routes r ON r.route_id = sr.route_id
+                       WHERE sr.stop_id = s.stop_id AND r.route_type = 3 AND r.listed = 1)
+         LIMIT ?`,
+      )
+      .all(south, north, west, east, limit) as unknown as StopRow[];
+    return rows.map((r) => this.summary(r));
+  }
+
+  /** A stop's position (platforms included), for capping vehicle motion at its next stop. */
+  stopPosition(stopId: string): { lat: number; lon: number } | null {
+    const r = this.stopRow(stopId);
+    return r ? { lat: r.lat, lon: r.lon } : null;
+  }
+
   /** All route ids, for the V3 prediction stream filter. */
   routeIdsByType(): Map<number, string[]> {
     const out = new Map<number, string[]>();

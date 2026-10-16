@@ -9,6 +9,7 @@ import { OffsetClock, systemClock, type Clock } from './live/clock.ts';
 import { Ingest } from './live/ingest.ts';
 import { LiveManager } from './live/manager.ts';
 import { Recorder } from './live/recorder.ts';
+import { BikesFeed } from './live/bikes.ts';
 import { loadRecording, ReplayDriver } from './live/replay.ts';
 import { LiveStore } from './live/store.ts';
 
@@ -67,8 +68,12 @@ if (replayEvents) {
   manager.start();
 }
 
+// Bluebikes is live-only (a replay has no bike data to go with it).
+const bikes = replayEvents ? null : new BikesFeed({ userAgent: config.userAgent, log });
+bikes?.start();
+
 const boards = new Boards({ getDb: () => db, store, ingest, clock });
-const app = await buildApp({ getDb: () => db, boards, clock, webDist: config.webDist, logger: false });
+const app = await buildApp({ getDb: () => db, boards, store, bikes, clock, webDist: config.webDist, logger: false });
 await app.listen({ port: config.port, host: config.host });
 log(`Listening on http://${config.host}:${config.port}`);
 
@@ -92,6 +97,7 @@ if (!replayEvents && !config.gtfsDir) {
 
 const shutdown = async () => {
   manager?.stop();
+  bikes?.stop();
   replay?.stop();
   await app.close();
   db.close();

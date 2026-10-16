@@ -23,11 +23,17 @@ import {
 } from '@twalk/core';
 import type { GtfsDb } from '../gtfs/db.ts';
 import type { Clock } from '../live/clock.ts';
+import type { BikesFeed } from '../live/bikes.ts';
+import type { LiveStore } from '../live/store.ts';
 import type { Boards } from './boards.ts';
+import { registerMapRoutes } from './map.ts';
+import { openSse } from './sse.ts';
 
 export interface AppDeps {
   getDb: () => GtfsDb;
   boards: Boards;
+  store: LiveStore;
+  bikes?: BikesFeed | null;
   clock: Clock;
   webDist?: string | null;
   logger?: boolean;
@@ -52,6 +58,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(fastifyCompress, { threshold: 1024 });
 
   app.get('/api/health', async () => boards.status());
+
+  registerMapRoutes(app, { getDb: deps.getDb, store: deps.store, boards, clock, bikes: deps.bikes ?? null });
 
   app.get<{ Querystring: { lat?: string; lon?: string; radius?: string; limit?: string; pace?: string } }>(
     '/api/nearby',
@@ -119,15 +127,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       .slice(0, MAX_LIVE_STOPS);
     if (ids.length === 0) return reply.code(400).send({ error: 'stops is required' });
 
-    reply.hijack();
-    const res = reply.raw;
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no',
-    });
-    const send = (event: LiveEvent) => res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+    const sse = openSse(req, reply);
+    const send = (event: LiveEvent) => sse.send(event.type, event);
     const sent = new Map<string, string>();
 
     const snapshot = ids.map((id) => {
@@ -156,7 +157,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         lastStatus = Date.now();
       }
     }, PUSH_EVERY_MS);
-    req.raw.on('close', () => clearInterval(timer));
+    sse.onClose(() => clearInterval(timer));
   });
 
   if (deps.webDist && existsSync(deps.webDist)) {

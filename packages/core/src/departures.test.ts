@@ -131,6 +131,11 @@ describe('labelling', () => {
     });
     expect(r?.track).toBe('3');
   });
+
+  it("doesn't call a subway platform code a track", () => {
+    const [r] = rows({ predictions: [pred({ routeId: 'Red' })], platformCodes: new Map([['S', 'B']]) });
+    expect(r?.track).toBeNull();
+  });
 });
 
 describe('ghost detection', () => {

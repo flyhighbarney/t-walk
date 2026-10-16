@@ -1,0 +1,79 @@
+// Saved: the stops you've pinned, with live departures.
+
+import { useEffect, useMemo, useState } from 'react';
+import { STATION_ENTRY_SECONDS, estimateWalk, haversineMeters, type StopResponse } from '@twalk/core';
+import { AppHeader } from '../components/Shell.tsx';
+import { StatusBanner } from '../components/StatusBanner.tsx';
+import { StopCard } from '../components/StopCard.tsx';
+import { StarIcon } from '../components/icons.tsx';
+import { fetchStop } from '../lib/api.ts';
+import { useLiveBoards, useNow } from '../lib/live.ts';
+import { useLocation } from '../lib/location.ts';
+import { useLocationOptIn, usePinnedStops, useWalkPace } from '../lib/storage.ts';
+
+export default function SavedScreen() {
+  const [pins, togglePin] = usePinnedStops();
+  const [optIn] = useLocationOptIn();
+  const location = useLocation(optIn);
+  const [pace] = useWalkPace();
+  const [stops, setStops] = useState<Map<string, StopResponse>>(new Map());
+  const now = useNow();
+
+  useEffect(() => {
+    const missing = pins.filter((id) => !stops.has(id));
+    if (missing.length === 0) return;
+    const ac = new AbortController();
+    Promise.all(missing.map((id) => fetchStop(id, ac.signal).catch(() => null))).then((rs) =>
+      setStops((prev) => {
+        const next = new Map(prev);
+        for (const r of rs) if (r) next.set(r.stop.id, r);
+        return next;
+      }),
+    );
+    return () => ac.abort();
+  }, [pins, stops]);
+
+  const seed = useMemo(() => {
+    const list = [...stops.values()];
+    return list.length ? { boards: list.map((s) => s.board), routes: list.flatMap((s) => s.routes), status: list[0]!.status } : undefined;
+  }, [stops]);
+  const live = useLiveBoards(pins, seed);
+
+  return (
+    <>
+      <AppHeader title="Saved" />
+      <main className="pb-tabbar mx-auto max-w-xl space-y-4 px-4 pt-2">
+        <StatusBanner status={live.status} connection={live.connection} lastMessageAt={live.lastMessageAt} />
+        {pins.length === 0 ? (
+          <div className="bg-surface rounded-2xl p-5 text-center">
+            <StarIcon filled={false} className="text-star mx-auto mb-2 size-8" />
+            <h2 className="text-lg font-bold">No saved stops yet</h2>
+            <p className="text-muted mt-1 text-sm">Tap the star on any stop, on Now or on the map, to keep it here.</p>
+          </div>
+        ) : null}
+        {pins.map((id) => {
+          const s = stops.get(id)?.stop;
+          if (!s) return null;
+          const walk =
+            location.kind === 'ok'
+              ? estimateWalk(haversineMeters(location.lat, location.lon, s.latitude, s.longitude), pace, s.isStation ? STATION_ENTRY_SECONDS : 0)
+              : null;
+          return (
+            <StopCard
+              key={id}
+              stop={s}
+              walk={walk}
+              entranceName={null}
+              board={live.boards.get(id)}
+              routes={live.routes}
+              status={live.status}
+              now={now}
+              pinned
+              onTogglePin={togglePin}
+            />
+          );
+        })}
+      </main>
+    </>
+  );
+}

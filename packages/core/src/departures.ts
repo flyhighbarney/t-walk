@@ -216,7 +216,8 @@ export function buildDepartures(input: BuildDeparturesInput): DepartureGroup[] {
         departureTime: canceled ? null : p.departureTime,
         scheduledTime,
         status: p.status,
-        track: input.platformCodes?.get(p.stopId) ?? null,
+        // Platform codes are tracks only on Commuter Rail (Green Line platforms are lettered B/C/D/E).
+        track: route.mode === 'commuter_rail' ? (input.platformCodes?.get(p.stopId) ?? null) : null,
         vehicleId: p.vehicleId,
         vehicleStoppedHere,
         occupancy: vehicle?.occupancy ?? null,

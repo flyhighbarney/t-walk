@@ -32,3 +32,7 @@ export function searchStops(q: string, signal?: AbortSignal) {
 }
 
 export const liveUrl = (stopIds: string[]) => `${BASE}/api/live?stops=${stopIds.map(encodeURIComponent).join(',')}`;
+
+/** For the map's own endpoints (lines, stations, vehicles, bikes). */
+export const getJson = get;
+export const apiUrl = (path: string) => `${BASE}${path}`;

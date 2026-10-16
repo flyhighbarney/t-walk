@@ -30,7 +30,22 @@ export default defineConfig({
         // The app shell works offline. Live data is never cached by the service
         // worker: a stale arrival time served as if fresh is exactly what this app
         // must not do. (Offline schedules come in Phase 4.)
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,mjs}'],
+        // The map is ~300 KB: fetched the first time someone opens it, not at install.
+        globIgnores: ['**/MapScreen-*', '**/maplibre-gl-worker*'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.origin === self.location.origin && /\/assets\/(MapScreen-|maplibre-gl-worker)/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: { cacheName: 'map-code', expiration: { maxEntries: 10 } },
+          },
+          {
+            // Basemap tiles, styles and fonts: they change rarely, and caching them saves data.
+            urlPattern: ({ url }) => url.hostname === 'tiles.openfreemap.org',
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'basemap', expiration: { maxEntries: 1500, maxAgeSeconds: 14 * 86400 } },
+          },
+        ],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
       },

@@ -1,48 +1,69 @@
 @import 'tailwindcss';
 
-/* Colour tokens. Every text/background pair here is at least 4.5:1 (WCAG AA). */
+/*
+ * Colour tokens, from the Stitch design ("Urban Kinetic Transit", design/stitch/).
+ * Dark is the design's main look; light follows its light tokens.
+ * Every text/background pair here is at least 4.5:1 (WCAG AA).
+ * Brand green is for interface chrome only, never for a route line.
+ */
 :root {
   color-scheme: light dark;
-  --bg: #f6f6f3;
+  --bg: #f9f9ff;
   --surface: #ffffff;
-  --surface-2: #eef0ee;
-  --line: #d6dad8;
-  --text: #15181a;
-  --muted: #4d5459;
-  --focus: #1b5fd1;
-  --live: #0b6b5e;
-  --ok-fg: #12632a;
-  --ok-bg: #e2f3e6;
+  --surface-2: #f0f3ff;
+  --surface-3: #e3eaff;
+  --line: #d3dcf3;
+  --text: #111c2d;
+  --muted: #3f4b5e;
+  --brand: #12b76a;
+  --on-brand: #04210f;
+  --brand-text: #006d3c;
+  --focus: #006d3c;
+  --live: #006d3c;
+  --ok-fg: #0d6b35;
+  --ok-bg: #dcf5e6;
   --hurry-fg: #7f4a00;
   --hurry-bg: #fff0d1;
   --miss-fg: #a3231b;
   --miss-bg: #fde6e3;
   --warn-fg: #6e4600;
-  --warn-bg: #fff4dc;
+  --warn-bg: #fff3d2;
   --down-fg: #ffffff;
   --down-bg: #8a2d22;
+  --star: #9a5400;
+  --chrome: rgb(255 255 255 / 0.94);
+  --shadow: 0 6px 24px rgb(17 28 45 / 0.14);
 }
 
 @media (prefers-color-scheme: dark) {
+  /* Exact values from the Stitch Map design (shared 2026-10-16; see design/stitch/README.md). */
   :root {
-    --bg: #0f1214;
-    --surface: #182024;
-    --surface-2: #212a2f;
-    --line: #34404a;
-    --text: #edf1f3;
-    --muted: #a9b4bc;
-    --focus: #8cb6ff;
-    --live: #6fd8c6;
-    --ok-fg: #8fe3a9;
-    --ok-bg: #133020;
-    --hurry-fg: #ffcb75;
-    --hurry-bg: #3b2a0c;
-    --miss-fg: #ffb3aa;
-    --miss-bg: #3d1613;
-    --warn-fg: #ffd58a;
-    --warn-bg: #362812;
-    --down-fg: #ffffff;
-    --down-bg: #8a2d22;
+    --bg: #091324;
+    --surface: #111c2d;
+    --surface-2: #202a3c;
+    --surface-3: #2b3548;
+    --line: #3d4a3f;
+    --text: #d9e3fb;
+    --muted: #bccabc;
+    --brand: #12b76a;
+    --on-brand: #00210e;
+    --brand-text: #51df8e;
+    --focus: #51df8e;
+    --live: #51df8e;
+    /* Status chips stay light in dark mode, as in the design. */
+    --ok-fg: #0d6b35;
+    --ok-bg: #dcf5e6;
+    --hurry-fg: #7f4a00;
+    --hurry-bg: #fff0d1;
+    --miss-fg: #a3231b;
+    --miss-bg: #fde6e3;
+    --warn-fg: #5c3a00;
+    --warn-bg: #fff1c9;
+    --down-fg: #ffdad6;
+    --down-bg: #93000a;
+    --star: #ffc15a;
+    --chrome: rgb(4 14 31 / 0.9);
+    --shadow: 0 8px 28px rgb(0 0 0 / 0.5);
   }
 }
 
@@ -50,9 +71,13 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-line: var(--line);
   --color-text: var(--text);
   --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-on-brand: var(--on-brand);
+  --color-brand-text: var(--brand-text);
   --color-live: var(--live);
   --color-ok-fg: var(--ok-fg);
   --color-ok-bg: var(--ok-bg);
@@ -64,6 +89,8 @@
   --color-warn-bg: var(--warn-bg);
   --color-down-fg: var(--down-fg);
   --color-down-bg: var(--down-bg);
+  --color-chrome: var(--chrome);
+  --color-star: var(--star);
 }
 
 html {
@@ -77,18 +104,27 @@ body {
   margin: 0;
   min-height: 100dvh;
   background: var(--bg);
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
-/* Times are tabular so a countdown doesn't jiggle as it changes. */
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.shadow-float {
+  box-shadow: var(--shadow);
 }
 
 .visually-hidden {
@@ -98,6 +134,11 @@ body {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Space for the fixed tab bar and the phone's home indicator. */
+.pb-tabbar {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
 }
 
 @keyframes live-pulse {
@@ -113,6 +154,30 @@ body {
   animation: live-pulse 2s ease-in-out infinite;
 }
 
+@keyframes halo {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+.you-halo {
+  animation: halo 2.4s ease-out infinite;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+.sheet-enter {
+  animation: sheet-up 0.22s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -120,4 +185,9 @@ body {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* MapLibre's attribution: legible on both themes. */
+.maplibregl-ctrl-attrib {
+  font-size: 11px;
 }

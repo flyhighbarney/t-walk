@@ -1,10 +1,14 @@
 # T-Walk
 
 Live MBTA departures near you, sorted by how long it takes to **walk** to each
-stop. Phase 1 of the plan: the server, the GTFS import, the "Now" screen, the
-replay harness and the time-zone tests.
+stop, and a live map of every train, bus and boat around you.
 
-Accuracy rules this phase enforces:
+- **Phase 1:** the server, the GTFS import, the "Now" screen, the replay harness
+  and the time-zone tests.
+- **Phase 2:** the live map (`/map`), Saved stops, the Stitch design
+  (`design/stitch/`), and Bluebikes.
+
+Accuracy rules:
 
 - Every time is labelled **Live**, **Estimate** (the MBTA's own schedule-based
   "prediction", uncertainty code 300), **Scheduled · vehicle on route**, or
@@ -20,6 +24,14 @@ Accuracy rules this phase enforces:
 - "May not run" flags a bus/rail trip that should have started three minutes
   ago and has nothing live on it, but only while the live feed is healthy and is
   tracking that route.
+- **Vehicles on the map move honestly** (`packages/core/src/motion.ts`):
+  - On each new report, a marker glides along its route line to the reported point over 1 s.
+  - Between reports, a moving vehicle continues at the speed measured from its last two
+    reports, for at most 10 s, and never past the stop it's heading for.
+  - Not heard from for 60 s (subway), 90 s (bus) or 120 s (rail/ferry), it freezes exactly
+    where it was last reported, greys out and shows its age ("2 min ago").
+  - Off its line (detours, shuttles): reported points only.
+  - Reduced motion: reported points only, no gliding.
 
 ## Layout
 
@@ -30,7 +42,9 @@ apps/server       Fastify server: the only thing that talks to the MBTA
   src/gtfs        GTFS download (conditional) → SQLite import → queries
   src/live        V3 SSE streams, GTFS-realtime fallback, store, health, recorder, replay
   src/api         HTTP API and the SSE fan-out to browsers
-apps/web          Vite + React + Tailwind PWA (the "Now" screen)
+apps/web          Vite + React + Tailwind PWA: Now, Map (lazy-loaded MapLibre), Saved
+  src/screens/map MapScreen, vehicleAnimator (frames), mapData (hooks), mapStyle, sheets
+design/stitch     The Stitch screens (HTML + PNG), DESIGN.md, and where the app departs from them
 fixtures/gtfs     A tiny made-up GTFS feed (Park Street, a bus stop, South Station…)
 fixtures/replay   Made-up scenarios in the recorder's format (see below)
 tests/            Replay and API tests;  e2e/  Playwright tests
@@ -72,6 +86,30 @@ npm run dev:web             # http://localhost:5173
 
 Secrets live only in `.env`, which is git-ignored.
 
+## The map
+
+- **Basemap:** OpenFreeMap (no key, no request limits, no SLA): its dark style
+  turned down to the design's navy, or Positron in light mode. If it can't be
+  fetched, the map draws on a plain background, so the transit layers still show.
+  Tiles, styles and fonts are cached by the service worker.
+- **Route lines** come from the GTFS shapes: for each route and direction, the
+  most-used shape plus any branch used by 15% or more of trips. They are
+  simplified to 4 m, served once per feed, and cached with an ETag. Rail and
+  ferry lines are always drawn. A bus route's line is fetched when its vehicles
+  are in view, used for snapping, and drawn when you select the bus.
+- **Vehicles** stream for the area in view, plus half its size around it, over
+  `/api/map/vehicles` (gzipped SSE: a snapshot, then only vehicles that changed).
+  Buses appear from street-level zoom (12.5).
+- **Sheets:** a vehicle's next stops (live predictions), a stop's departures
+  (the same rows as Now, with line filters), Bluebikes counts, layers, and
+  **In view**: a text list of the vehicles and stations on screen. That list is
+  the way into the map without seeing it.
+- **Bluebikes:** GBFS 2.3 from `gbfs.lyft.com/gbfs/2.3/bos`. Stations refresh
+  hourly, counts every minute. The layer is fetched only while it's on and the
+  page is visible.
+- The MapLibre bundle (~295 KB gzipped) loads only when the Map tab is opened,
+  and is not precached at install.
+
 ## How live data flows
 
 ```
@@ -93,7 +131,7 @@ cdn.mbta.com ─poll─┘  GTFS-realtime: no-key mode, and fallback when a V3 s
   reconnecting it ages from the moment the stream closed. GTFS-realtime uses the
   feed header's timestamp.
 - **Browsers** get a snapshot and then only boards that changed, checked once a
-  second, with a status keep-alive every 15 s. The connection closes when the tab
+  second, with a status keep-alive every 15 s. Both live streams are gzipped. The connection closes when the tab
   is hidden and reopens (with a fresh snapshot) when it's visible. Countdowns
   tick locally against the server's clock.
 - **GTFS refresh.** Checked every 6 hours with `If-None-Match` /
@@ -103,9 +141,10 @@ cdn.mbta.com ─poll─┘  GTFS-realtime: no-key mode, and fallback when a V3 s
 ## Tests
 
 ```bash
-npm test                    # Vitest: core, adapters, replay scenarios, API (76 tests)
-npm run test:e2e            # builds, then Playwright on two replay servers (6 tests, incl. axe)
-npm run lighthouse          # builds, then a mobile Lighthouse run on the replay
+npm test                    # Vitest: core, motion, adapters, replay scenarios, API, map (99 tests)
+npm run test:e2e            # builds, then Playwright on two replay servers (11 tests, incl. axe on Now and Map)
+npm run lighthouse          # builds, then a mobile Lighthouse run of Now on the replay
+npm run lighthouse -- map   # the same for the Map screen
 npm run typecheck && npm run lint
 ```
 
@@ -141,6 +180,30 @@ GTFS_DIR=fixtures/gtfs DATA_DIR=data-fixture REPLAY_FILE=fixtures/replay/normal.
 ```
 
 …and allow location near Park Street (42.3566, -71.0623).
+
+## Lighthouse (mobile, 2026-10-16)
+
+| Screen | Performance | Accessibility | Best practices |
+|---|---|---|---|
+| Now (landing) | 97 (FCP 1.7 s, LCP 1.9 s) | 100 | 100 |
+| Map | 51 (TBT 5.8 s) | 100 | 100 |
+
+The Map's score is MapLibre starting its WebGL engine and decoding vector tiles
+on Lighthouse's 4× slowed CPU. Ways to bring it up are listed under known gaps.
+
+## Known gaps
+
+- **Map performance on slow phones** (Lighthouse 51). Options: draw a static
+  preview first and start MapLibre on first touch; cap the device pixel ratio;
+  fewer basemap layers; raster tiles at low zoom.
+- **Shuttles and diversions** are drawn only as their buses (shuttle routes are
+  in the feed). Outlining a diversion from its alert needs alerts, so an API key.
+- **Alerts and elevator status** need `MBTA_API_KEY` (the V3 stream).
+- **The V3 streaming path is untested against live data** until a key is set;
+  the GTFS-realtime path is what ran on live data.
+- **Walking times are straight-line × 1.3** until OpenTripPlanner (Phase 3).
+  The map's walk circle is labelled "about".
+- **The MassDOT Developers License** hasn't been read yet. Read it before anything goes public.
 
 ## Privacy
 

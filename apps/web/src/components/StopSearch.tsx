@@ -52,7 +52,14 @@ export function StopSearch({ onPick }: { onPick: (stop: StopSummary) => void }) 
         <ul className="bg-surface border-line divide-line mt-2 divide-y rounded-xl border">
           {results.map((s) => (
             <li key={s.id}>
-              <button type="button" onClick={() => onPick(s)} className="w-full px-3 py-3 text-left">
+              <button
+                type="button"
+                onClick={() => {
+                  onPick(s);
+                  setQ('');
+                }}
+                className="w-full px-3 py-3 text-left"
+              >
                 <span className="font-medium">{s.name}</span>
                 <span className="text-muted block text-xs">{s.isStation ? 'Station' : 'Stop'} · {s.routeIds.length} routes</span>
               </button>

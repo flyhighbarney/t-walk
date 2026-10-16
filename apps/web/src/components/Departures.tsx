@@ -30,6 +30,13 @@ interface RowText {
   hidden: boolean;
 }
 
+/** "about 1 min" → "about 1 minute", "1 hr 12 min" → "1 hour 12 minutes". */
+function spokenDuration(text: string): string {
+  return text
+    .replace(/\b(\d+) min\b/, (_, n: string) => `${n} ${n === '1' ? 'minute' : 'minutes'}`)
+    .replace(/\b(\d+) hr\b/, (_, n: string) => `${n} ${n === '1' ? 'hour' : 'hours'}`);
+}
+
 function rowText(g: DepartureGroup, r: DepartureRow, now: number): RowText {
   if (r.canceled) {
     const t = r.scheduledTime ? formatClock(r.scheduledTime).full : '';
@@ -49,7 +56,7 @@ function rowText(g: DepartureGroup, r: DepartureRow, now: number): RowText {
   });
   if (d.kind === 'hidden') return { main: '', spoken: '', hidden: true };
   const main = r.source === 'estimate' && d.kind === 'countdown' ? `about ${d.text}` : d.text;
-  const spoken = d.kind === 'countdown' ? `in ${main.replace('min', 'minutes').replace('hr', 'hours')}` : d.kind === 'clock' ? `at ${main}` : main;
+  const spoken = d.kind === 'countdown' ? `in ${spokenDuration(main)}` : d.kind === 'clock' ? `at ${main}` : main;
   return { main, spoken, hidden: false };
 }
 
@@ -124,10 +131,10 @@ function Row(props: {
     .join(', ');
 
   return (
-    <li className={`flex items-start justify-between gap-3 py-2 ${props.stale ? 'opacity-60' : ''}`}>
+    <li className={`bg-surface-2 flex items-start justify-between gap-3 rounded-xl px-3 py-2.5 ${props.stale ? 'opacity-60' : ''}`}>
       <span className="visually-hidden">{spoken}</span>
       <div className="min-w-0 flex-1" aria-hidden>
-        <div className="font-medium break-words">{r.headsign}</div>
+        <div className="text-[17px] leading-snug font-bold break-words">{r.headsign}</div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
           <SourceLabel source={r.source} />
           {notes.map((n) => (
@@ -142,7 +149,7 @@ function Row(props: {
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1" aria-hidden>
-        <span className={`tabular text-lg leading-tight font-bold ${r.canceled ? 'text-muted line-through' : ''}`}>{t.main}</span>
+        <span className={`tabular text-xl leading-tight font-extrabold ${r.canceled ? 'text-muted line-through' : ''}`}>{t.main}</span>
         {catchInfo ? <CatchBadge level={catchInfo.level} /> : null}
       </div>
     </li>
@@ -167,8 +174,8 @@ export function DepartureGroupView(props: {
   const headingId = `g-${g.routeId}-${g.directionId}`;
 
   return (
-    <section aria-labelledby={headingId} className="border-line border-t pt-2 first:border-t-0 first:pt-0">
-      <h3 id={headingId} className="flex flex-wrap items-center gap-2 text-sm">
+    <section aria-labelledby={headingId}>
+      <h3 id={headingId} className="mb-2 flex flex-wrap items-center gap-2 text-sm">
         {route ? <RouteChip route={route} /> : null}
         <span className="font-semibold">{route ? routeName(route) : g.routeId}</span>
         <span className="text-muted">
@@ -189,7 +196,7 @@ export function DepartureGroupView(props: {
       ) : null}
       {!g.headway && visible.length === 0 ? <p className="text-muted mt-1 text-sm">No more departures in the next 90 minutes.</p> : null}
       {visible.length > 0 ? (
-        <ul className="divide-line divide-y">
+        <ul className="space-y-2">
           {visible.map((r) => (
             <Row key={r.key} group={g} row={r} now={now} walk={walk} stale={stale} />
           ))}
