@@ -75,3 +75,14 @@ describe('transferRisk with history', () => {
     expect(['low', 'medium', 'high'].indexOf(widened.level)).toBeGreaterThanOrEqual(['low', 'medium', 'high'].indexOf(base.level));
   });
 });
+
+describe('ArrivalHistory.summary', () => {
+  it('counts pairs, samples and pairs with enough samples', async () => {
+    const { ArrivalHistory, MIN_SAMPLES } = await import('@twalk/core');
+    const h = new ArrivalHistory();
+    for (let i = 0; i < MIN_SAMPLES; i++) h.record({ routeId: 'Red', stopId: 'a' }, { delayS: 60, at: i });
+    h.record({ routeId: 'Red', stopId: 'b' }, { delayS: 30, at: 1 });
+    expect(h.summary()).toEqual({ pairs: 2, samples: MIN_SAMPLES + 1, usable: 1 });
+  });
+
+});

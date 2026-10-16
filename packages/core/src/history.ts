@@ -57,6 +57,17 @@ export class ArrivalHistory {
     return p80 == null ? null : Math.min(MAX_EXTRA_BUFFER_S, Math.max(0, Math.round(p80)));
   }
 
+  /** Counts for debugging: how many route+stop pairs are tracked and how many have enough samples to widen a buffer. */
+  summary(): { pairs: number; samples: number; usable: number } {
+    let samples = 0;
+    let usable = 0;
+    for (const list of this.samples.values()) {
+      samples += list.length;
+      if (list.length >= MIN_SAMPLES) usable++;
+    }
+    return { pairs: this.samples.size, samples, usable };
+  }
+
   toJSON(): Record<string, ArrivalSample[]> {
     return Object.fromEntries(this.samples);
   }

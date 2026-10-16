@@ -115,7 +115,7 @@ if (config.vapid && !replayEvents) {
   log('No VAPID keys: leave-now notifications are off (npm run push:keys to turn them on).');
 }
 
-const app = await buildApp({ getDb: () => db, boards, store, bikes, planner, geocoder, ingest, push, clock, webDist: config.webDist, logger: false });
+const app = await buildApp({ getDb: () => db, history: delays.history, boards, store, bikes, planner, geocoder, ingest, push, clock, webDist: config.webDist, logger: false });
 await app.listen({ port: config.port, host: config.host });
 log(`Listening on http://${config.host}:${config.port}`);
 

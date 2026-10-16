@@ -1,5 +1,12 @@
 # T-Walk standup log
 
+## 2026-10-16 (hourly run 7)
+- **Verified:** on d5d98bc, typecheck, lint, 191 unit and 23 e2e pass.
+- **Done:** debug count of history samples: `ArrivalHistory.summary()` and `GET /api/history/summary` returning pairs, samples and usable pairs (8+ samples). Wired in `main.ts`. New unit test.
+- **After:** 192 unit and 23 e2e pass, typecheck and lint clean. The route itself has no HTTP test (the test helper's `buildApp` doesn't pass history).
+- **Next:** no phase planned. Candidates: HTTP test for the summary route, screen reader pass, check recorded delays after days of live running.
+- **Not verified:** history with real MBTA data, screen reader pass, real-device touch/compass, long stop names on Map sheets.
+
 ## 2026-10-16 (hourly run 6)
 - **Verified:** the uncommitted run 4/5 edits (Manrope/Newsreader/JetBrains Mono type, flat radii, dark-mode switch knob fix): typecheck, lint, 190 unit and 23 e2e pass.
 - **Done:** Phase 6 finished. `TransferCheck.usuallyLateS`; transfer text says "the ride before usually runs N min late" once history widens the buffer; the trip risk note stops saying "no history yet" in that case; README updated; new test. `data-fixture/` gitignored.

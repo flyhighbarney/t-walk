@@ -21,6 +21,7 @@ import {
   type StopResponse,
   type WalkPace,
 } from '@twalk/core';
+import type { ArrivalHistory } from '@twalk/core';
 import type { GtfsDb } from '../gtfs/db.ts';
 import type { Clock } from '../live/clock.ts';
 import type { BikesFeed } from '../live/bikes.ts';
@@ -45,6 +46,7 @@ export interface AppDeps {
   store: LiveStore;
   bikes?: BikesFeed | null;
   planner?: Planner | null;
+  history?: ArrivalHistory | null;
   ingest?: Ingest | null;
   push?: { store: PushStore; sender: PushSender; publicKey: string } | null;
   geocoder?: Geocoder | null;
@@ -72,6 +74,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(fastifyCompress, { threshold: 1024 });
 
   app.get('/api/health', async () => boards.status());
+  if (deps.history) app.get('/api/history/summary', async () => deps.history!.summary());
 
   registerMapRoutes(app, { getDb: deps.getDb, store: deps.store, boards, clock, bikes: deps.bikes ?? null });
   if (deps.planner && deps.geocoder) registerPlanRoutes(app, { planner: deps.planner, geocoder: deps.geocoder, now: () => clock.now() });
