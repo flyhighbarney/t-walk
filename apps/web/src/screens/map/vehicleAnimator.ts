@@ -88,7 +88,7 @@ export class VehicleAnimator {
       const sameTrip = prev && prev.v.tripId === v.tripId && prev.shape === shape;
       const track = addReport(
         sameTrip ? prev.track : null,
-        { t: v.updatedAt, lon: v.longitude, lat: v.latitude, distance, moving: v.currentStatus !== 'STOPPED_AT', capDistance: cap },
+        { t: v.updatedAt, lon: v.longitude, lat: v.latitude, distance, status: v.currentStatus, capDistance: cap },
         now,
         sameTrip && prev.drawn ? { lon: prev.drawn.lon, lat: prev.drawn.lat, distance: prev.drawn.distance } : null,
       );

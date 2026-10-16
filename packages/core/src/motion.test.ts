@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pointAlong, prepareShape, simplify, snapToShape, type LngLat } from './geo.ts';
-import { addReport, EXTRAPOLATE_MAX_MS, positionAt, TRANSITION_MS, type VehicleReport } from './motion.ts';
+import { addReport, DEPARTURE_EASE_MS, EXTRAPOLATE_MAX_MS, positionAt, TRANSITION_MS, type VehicleReport } from './motion.ts';
 
 // A straight 1 km line due north from Park Street, and a dogleg.
 const LAT0 = 42.3564;
@@ -35,7 +35,7 @@ describe('geometry', () => {
 const along = (d: number) => pointAlong(LINE, d);
 const rep = (t: number, distance: number | null, over: Partial<VehicleReport> = {}): VehicleReport => {
   const p = distance == null ? { lon: LON0 + 0.01, lat: LAT0 } : pointAlong(LINE, distance);
-  return { t, lon: p.lon, lat: p.lat, distance, moving: true, capDistance: null, ...over };
+  return { t, lon: p.lon, lat: p.lat, distance, status: 'IN_TRANSIT_TO', capDistance: null, ...over };
 };
 const opts = { staleAfterMs: 60_000, reducedMotion: false, along };
 
@@ -72,7 +72,7 @@ describe('vehicle motion', () => {
 
   it("doesn't move a vehicle stopped at a stop", () => {
     let tr = addReport(null, rep(T, 100), T, null);
-    tr = addReport(tr, rep(T + 10_000, 200, { moving: false }), T + 10_000, null);
+    tr = addReport(tr, rep(T + 10_000, 200, { status: 'STOPPED_AT' }), T + 10_000, null);
     const p = positionAt(tr, T + 15_000, opts);
     expect(p).toMatchObject({ distance: 200, state: 'holding' });
   });
@@ -119,5 +119,45 @@ describe('vehicle motion', () => {
     tr = addReport(tr, rep(T + 10_000, null, { lat: LAT0 + 0.001 }), T + 10_000, { lon: LON0 + 0.01, lat: LAT0, distance: null });
     const p = positionAt(tr, T + 15_000, opts);
     expect(p).toMatchObject({ lat: LAT0 + 0.001, distance: null, state: 'holding' });
+  });
+
+  it('eases in after pulling away from a stop instead of jumping to full speed', () => {
+    let tr = addReport(null, rep(T, 100, { status: 'STOPPED_AT' }), T, null);
+    tr = addReport(tr, rep(T + 10_000, 200), T + 10_000, null); // departs at 10 m/s
+    expect(tr.speed).toBeCloseTo(10);
+    // Linear extrapolation would put it at 225 after 2.5 s; eased, it's well short of that.
+    const p = positionAt(tr, T + 10_000 + 2_500, opts);
+    expect(p.distance!).toBeGreaterThan(200);
+    expect(p.distance!).toBeLessThan(225);
+    expect(p.distance).toBeCloseTo(200 + 10 * 2.5 * (2_500 / DEPARTURE_EASE_MS) ** 3, 1);
+  });
+
+  it('keeps extrapolating at full speed once underway (no easing after the first report)', () => {
+    let tr = addReport(null, rep(T, 100), T, null);
+    tr = addReport(tr, rep(T + 10_000, 200), T + 10_000, null);
+    const p = positionAt(tr, T + 12_500, opts);
+    expect(p.distance).toBeCloseTo(225, 0);
+  });
+
+  it('eases out into a stop it is incoming at, reaching the platform exactly on schedule', () => {
+    let tr = addReport(null, rep(T, 100), T, null);
+    tr = addReport(tr, rep(T + 10_000, 200, { status: 'INCOMING_AT', capDistance: 240 }), T + 10_000, null); // 10 m/s, 40 m to go, eta 4 s
+    // Linear would be at 220 after 2 s; easing out front-loads the approach, so it's further along.
+    const mid = positionAt(tr, T + 10_000 + 2_000, opts);
+    expect(mid.distance!).toBeGreaterThan(220);
+    expect(mid.distance!).toBeLessThan(240);
+    // Right at the estimated arrival time, it's drawn exactly at the platform, not overshooting.
+    const arrival = positionAt(tr, T + 10_000 + 4_000, opts);
+    expect(arrival.distance).toBeCloseTo(240, 0);
+  });
+
+  it('smooths a noisy speed reading instead of tracking it exactly', () => {
+    let tr = addReport(null, rep(T, 0), T, null);
+    tr = addReport(tr, rep(T + 10_000, 100), T + 10_000, null); // 10 m/s
+    expect(tr.speed).toBeCloseTo(10);
+    tr = addReport(tr, rep(T + 20_000, 300), T + 20_000, null); // a noisy 20 m/s reading
+    expect(tr.speed).toBeCloseTo(15); // pulled toward it, not snapped to it
+    tr = addReport(tr, rep(T + 30_000, 400), T + 30_000, null); // back to 10 m/s
+    expect(tr.speed).toBeCloseTo(12.5); // still settling, not instantly back to 10
   });
 });
